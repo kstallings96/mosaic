@@ -1,0 +1,700 @@
+.app {
+  min-height: 100svh;
+}
+
+.screen {
+  padding: 16px 18px 40px;
+  max-width: 1100px;
+  margin: 0 auto;
+}
+
+/* ---------- login ---------- */
+
+.login-screen {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 100svh;
+}
+
+.login-card {
+  width: min(420px, 100%);
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  padding: 28px 26px 24px;
+}
+
+.wordmark {
+  font-family: var(--display);
+  font-weight: 600;
+  font-size: 40px;
+  letter-spacing: 0.16em;
+  text-align: center;
+  margin: 0;
+  background: linear-gradient(96deg, var(--c1), var(--c2) 55%, var(--c3));
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+.wordmark-sub {
+  text-align: center;
+  font-family: var(--display);
+  font-size: 12.5px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--faint);
+  margin-bottom: 16px;
+}
+
+.rule-line {
+  height: 1px;
+  background: var(--line);
+  margin: 16px 0;
+}
+
+.lede {
+  color: var(--dim);
+  margin-bottom: 14px;
+}
+
+.field {
+  margin-bottom: 14px;
+}
+
+.field label {
+  display: block;
+  font-family: var(--display);
+  font-size: 12.5px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--faint);
+  margin-bottom: 5px;
+}
+
+.field input,
+.field select {
+  width: 100%;
+  padding: 11px 13px;
+  border-radius: 10px;
+  border: 1px solid var(--line);
+  background: var(--ink-bg);
+  color: var(--ink);
+  font: 16px var(--sans); /* 16px or iOS zooms on focus */
+}
+
+.field input:focus,
+.field select:focus {
+  outline: 2px solid var(--c1);
+  outline-offset: 1px;
+}
+
+.field-error {
+  color: var(--bad);
+  font-size: 13.5px;
+  margin-top: 5px;
+}
+
+.primary-button {
+  width: 100%;
+  padding: 13px 18px;
+  border-radius: 999px;
+  border: none;
+  background: linear-gradient(96deg, var(--c1), var(--c3));
+  color: #16121f;
+  font-family: var(--display);
+  font-weight: 600;
+  font-size: 16px;
+  cursor: pointer;
+}
+
+.primary-button:active {
+  transform: scale(0.985);
+}
+
+/* ---------- level shell ---------- */
+
+.level-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 14px;
+  flex-wrap: wrap;
+  margin-bottom: 12px;
+}
+
+.rule {
+  font-family: var(--display);
+  font-size: clamp(18px, 2.6vw, 23px);
+  font-weight: 600;
+  margin: 0;
+}
+
+.level-meta {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-family: var(--display);
+  font-size: 13px;
+}
+
+.clock {
+  padding: 5px 13px;
+  border-radius: 999px;
+  border: 1px solid var(--line);
+  color: var(--dim);
+}
+
+.clock.unlocked {
+  border-color: var(--c1);
+  color: var(--c1);
+}
+
+.remaining {
+  color: var(--faint);
+}
+
+.banner {
+  border-radius: 10px;
+  padding: 9px 14px;
+  margin-bottom: 12px;
+  font-size: 14.5px;
+}
+
+.banner.warn {
+  background: rgba(255, 122, 138, 0.14);
+  border: 1px solid rgba(255, 122, 138, 0.45);
+  color: #ffd2d8;
+}
+
+.level-body {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 260px;
+  gap: 18px;
+  align-items: start;
+}
+
+@media (max-width: 860px) {
+  .level-body {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Locked, not hidden: during a walkthrough the board is the thing being
+   explained, so it must stay readable. */
+.level-body.locked .board {
+  opacity: 0.9;
+  pointer-events: none;
+}
+
+.board-wrap {
+  min-width: 0;
+}
+
+.board {
+  width: 100%;
+  height: auto;
+  display: block;
+  max-height: 62svh;
+}
+
+/* ---------- regions ---------- */
+
+.region {
+  cursor: pointer;
+}
+
+.region polygon,
+.region circle {
+  stroke: var(--ink-bg);
+  stroke-width: 3;
+  transition: opacity 0.18s, filter 0.18s;
+}
+
+.region.dim polygon,
+.region.dim circle {
+  opacity: 0.28;
+}
+
+/* Held down: the regions this one touches. That is the entire rule. */
+.region.nb polygon,
+.region.nb circle {
+  filter: brightness(1.4);
+  stroke: var(--ink);
+  stroke-width: 4;
+}
+
+.region.sel polygon,
+.region.sel circle {
+  stroke: #fff;
+  stroke-width: 4;
+}
+
+/* Pre-coloured: the regions that break the interchangeable-colour symmetry. */
+.region .pin {
+  stroke: rgba(255, 255, 255, 0.85);
+  stroke-width: 2.5;
+  stroke-dasharray: 7 6;
+}
+
+.region.given {
+  cursor: default;
+}
+
+/* Only shown once the forced moves run out. */
+.region.tightest polygon,
+.region.tightest circle {
+  stroke: var(--mrv);
+  stroke-width: 5;
+}
+
+.region.spotlight polygon,
+.region.spotlight circle {
+  stroke: #fff;
+  stroke-width: 5;
+}
+
+.region foreignObject {
+  overflow: visible;
+  pointer-events: none;
+}
+
+.link {
+  stroke: var(--line);
+  stroke-width: 3;
+  transition: stroke 0.18s, opacity 0.18s;
+}
+
+.link.lit {
+  stroke: var(--ink);
+  stroke-width: 4;
+}
+
+.link.dim {
+  opacity: 0.22;
+}
+
+/* ---------- weight ---------- */
+
+.w {
+  position: relative;
+  width: 34px;
+  height: 34px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.w .w-shape {
+  position: absolute;
+  inset: 0;
+  margin: auto;
+  transition: width 0.3s, height 0.3s, opacity 0.3s;
+}
+
+.w-num {
+  position: relative;
+  font: 700 15px/1 var(--display);
+}
+
+/* Two and up carry no digit: the disc grows and brightens as options run
+   out, so the tightest region is the heaviest mark rather than a number
+   you have to find and compare. */
+.w-many .w-shape {
+  width: calc(10px + var(--heft) * 14px);
+  height: calc(10px + var(--heft) * 14px);
+  border-radius: 50%;
+  background: #fff;
+  opacity: calc(0.22 + var(--heft) * 0.5);
+}
+
+/* One: decided. */
+.w-one {
+  color: var(--ok);
+}
+
+.w-one .w-shape {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  border: 2.5px solid currentColor;
+  background: rgba(143, 224, 122, 0.16);
+  box-shadow: 0 0 12px -2px currentColor;
+}
+
+/* Zero: broken. A different SHAPE, not merely a different colour. */
+.w-zero {
+  color: var(--bad);
+}
+
+.w-zero .w-shape {
+  width: 22px;
+  height: 22px;
+  border: 2.5px solid currentColor;
+  background: rgba(255, 122, 138, 0.18);
+  transform: rotate(45deg);
+  border-radius: 3px;
+}
+
+/* Only counters whose value actually moved run this, each a beat after the
+   last, so the cascade reads as a wave instead of a flash. */
+.w.bumping {
+  animation: heft-bump 280ms cubic-bezier(0.34, 1.4, 0.5, 1) both;
+}
+
+@keyframes heft-bump {
+  0% { transform: scale(1); }
+  38% { transform: scale(1.42); }
+  100% { transform: scale(1); }
+}
+
+/* ---------- side panel ---------- */
+
+.side {
+  min-width: 0;
+}
+
+.palette {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 8px;
+}
+
+.swatch {
+  width: 60px;
+  height: 60px;
+  border-radius: 15px;
+  border: 2px solid var(--line);
+  background: rgba(255, 255, 255, 0.04);
+  padding: 0;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform 0.15s, opacity 0.2s, border-color 0.2s;
+}
+
+.swatch .swatch-face {
+  width: 36px;
+  height: 36px;
+  border-radius: 11px;
+  background: var(--c);
+}
+
+.swatch:not(:disabled) {
+  border-color: var(--c);
+}
+
+.swatch:not(:disabled):active {
+  transform: scale(0.93);
+}
+
+.swatch.idle {
+  opacity: 0.45;
+  cursor: default;
+}
+
+/* A colour a neighbour already took stays visible and struck out, so the
+   domain shrinking is watched rather than inferred from an absence. */
+.swatch.blocked {
+  opacity: 0.28;
+  position: relative;
+  cursor: default;
+}
+
+.swatch.blocked::after {
+  content: '';
+  position: absolute;
+  left: 8px;
+  right: 8px;
+  top: 50%;
+  height: 2.5px;
+  background: var(--bad);
+  transform: rotate(-45deg);
+}
+
+.palette-hint {
+  font-family: var(--display);
+  font-size: 14px;
+  color: var(--faint);
+  margin-bottom: 12px;
+}
+
+.controls {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+.mini {
+  padding: 9px 18px;
+  border-radius: 999px;
+  border: 1px solid var(--line);
+  background: none;
+  color: var(--dim);
+  font-family: var(--display);
+  font-size: 14px;
+  cursor: pointer;
+}
+
+.mini:disabled {
+  opacity: 0.35;
+  cursor: default;
+}
+
+/* ---------- helper ---------- */
+
+.assist {
+  border: 1px solid var(--c1);
+  border-radius: 13px;
+  background: linear-gradient(180deg, var(--panel-2), var(--panel));
+  padding: 13px 14px;
+  animation: assist-in 0.3s ease-out;
+}
+
+@keyframes assist-in {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: none; }
+}
+
+.assist-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  font-family: var(--display);
+  font-size: 11.5px;
+  font-weight: 600;
+  letter-spacing: 0.16em;
+  color: var(--c1);
+  margin-bottom: 10px;
+}
+
+.assist-badge .dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--c1);
+  box-shadow: 0 0 9px var(--c1);
+}
+
+.assist-buttons {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+}
+
+.assist-button {
+  width: 100%;
+  padding: 11px 14px;
+  border-radius: 10px;
+  border: 1px solid var(--line);
+  background: rgba(255, 255, 255, 0.04);
+  color: var(--ink);
+  font-family: var(--display);
+  font-size: 14.5px;
+  text-align: left;
+  cursor: pointer;
+}
+
+.assist-button:hover {
+  border-color: var(--c1);
+}
+
+.link-button {
+  display: block;
+  margin-top: 8px;
+  background: none;
+  border: none;
+  padding: 2px 0;
+  min-height: 32px;
+  color: var(--faint);
+  font-size: 13.5px;
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+.walk-step {
+  font-family: var(--display);
+  font-size: 12px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--faint);
+  margin-bottom: 6px;
+}
+
+.walk-reason {
+  font-size: 14.5px;
+  color: var(--ink);
+  margin-bottom: 10px;
+  line-height: 1.45;
+}
+
+/* Reasons stack rather than replace each other: seeing two explanations
+   with the same shape at once is where the structure becomes visible. */
+.reasons {
+  list-style: none;
+  margin: 12px 0 0;
+  padding: 11px 0 0;
+  border-top: 1px solid var(--line);
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+}
+
+.reasons li {
+  font-size: 13.5px;
+  line-height: 1.45;
+  color: var(--faint);
+  padding-left: 11px;
+  border-left: 2px solid var(--line);
+}
+
+.reasons li.newest {
+  color: var(--dim);
+  border-left-color: var(--c1);
+}
+
+/* ---------- foot ---------- */
+
+.foot {
+  margin-top: 16px;
+  font-size: 14.5px;
+  color: var(--faint);
+}
+
+.foot .ok { color: var(--ok); }
+.foot .bad { color: var(--bad); }
+.foot .mrv { color: var(--mrv); }
+
+/* ---------- how to play ---------- */
+
+.howto-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 40;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  background: rgba(10, 8, 18, 0.82);
+  backdrop-filter: blur(3px);
+  animation: fade-in 0.18s ease-out;
+}
+
+.howto-backdrop.leaving {
+  animation: fade-out 0.14s ease-in forwards;
+}
+
+@keyframes fade-in { from { opacity: 0; } to { opacity: 1; } }
+@keyframes fade-out { to { opacity: 0; } }
+
+.howto-card {
+  width: min(480px, 100%);
+  max-height: 88svh;
+  overflow-y: auto;
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  padding: 24px 24px 22px;
+}
+
+.howto-title {
+  font-family: var(--display);
+  font-size: 21px;
+  font-weight: 600;
+}
+
+.howto-story {
+  color: var(--dim);
+  margin-bottom: 16px;
+  line-height: 1.5;
+}
+
+.howto-steps {
+  list-style: none;
+  margin: 0 0 18px;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 11px;
+}
+
+.howto-steps li {
+  display: flex;
+  gap: 11px;
+  align-items: flex-start;
+  line-height: 1.45;
+  font-size: 15px;
+}
+
+.howto-num {
+  flex: none;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: var(--panel-2);
+  border: 1px solid var(--line);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--display);
+  font-size: 13px;
+  color: var(--c1);
+}
+
+/* ---------- end ---------- */
+
+.end-screen {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 100svh;
+  text-align: center;
+}
+
+.end-card h1 {
+  font-family: var(--display);
+  font-size: 34px;
+  letter-spacing: 0.1em;
+  cursor: default;
+  background: linear-gradient(96deg, var(--c1), var(--c2) 55%, var(--c3));
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+.restart-row {
+  margin-top: 26px;
+}
+
+.restart {
+  padding: 10px 20px;
+  border-radius: 999px;
+  border: 1px solid var(--line);
+  background: none;
+  color: var(--faint);
+  font-family: var(--display);
+  font-size: 14px;
+  cursor: pointer;
+}
+
+.restart.armed {
+  border-color: var(--bad);
+  color: var(--bad);
+}
+
+.restart-warning {
+  margin-top: 9px;
+  font-size: 13px;
+  color: var(--faint);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}

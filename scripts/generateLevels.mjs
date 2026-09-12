@@ -1,0 +1,207 @@
+import { writeFileSync } from 'fs';
+
+import { fileURLToPath } from 'url';
+import { dirname, join } from 'path';
+
+const HERE = dirname(fileURLToPath(import.meta.url));
+const OUT = join(HERE, '..', 'src', 'data', 'levels.ts');
+
+const DIRS = [[1,0],[1,-1],[0,-1],[-1,0],[-1,1],[0,1]];
+const dom = (adj, col, k, i) => [...Array(k).keys()].filter(v => !adj[i].some(j => col[j] === v));
+
+function count(adj, k, given, limit = 3) {
+  const N = adj.length, col = new Array(N).fill(-1);
+  for (const [i, v] of Object.entries(given)) col[+i] = v;
+  let f = 0; const sols = [];
+  (function go(i) {
+    if (f >= limit) return;
+    if (i === N) { f++; sols.push([...col]); return; }
+    if (col[i] !== -1) return go(i + 1);
+    for (let v = 0; v < k; v++) {
+      if (adj[i].some(j => col[j] === v)) continue;
+      col[i] = v; go(i + 1); col[i] = -1;
+      if (f >= limit) return;
+    }
+  })(0);
+  return { f, sols };
+}
+
+function propagate(adj, k, given) {
+  const col = new Array(adj.length).fill(-1);
+  for (const [i, v] of Object.entries(given)) col[+i] = v;
+  let placed = 0, waves = 0;
+  for (;;) {
+    const forced = [...Array(adj.length).keys()].filter(i => col[i] === -1 && dom(adj, col, k, i).length === 1);
+    if (!forced.length) break;
+    waves++;
+    for (const i of forced) { const d = dom(adj, col, k, i); if (d.length === 1) { col[i] = d[0]; placed++; } }
+  }
+  return { placed, waves, left: col.filter(v => v === -1).length };
+}
+
+function hex(R, drop = new Set()) {
+  const all = [];
+  for (let q = -R; q <= R; q++) for (let r = -R; r <= R; r++) if (Math.abs(q + r) <= R) all.push({ q, r });
+  const cells = all.filter((_, i) => !drop.has(i));
+  const key = (q, r) => q + ',' + r;
+  const idx = new Map(cells.map((c, i) => [key(c.q, c.r), i]));
+  const adj = cells.map(c => DIRS.map(([dq, dr]) => idx.get(key(c.q + dq, c.r + dr))).filter(v => v !== undefined));
+  return { cells, adj };
+}
+
+const HEX = 42;
+const centre = c => ({ x: HEX * Math.sqrt(3) * (c.q + c.r / 2), y: HEX * 1.5 * c.r });
+function poly(c) {
+  const { x, y } = centre(c);
+  return Array.from({ length: 6 }, (_, i) => {
+    const a = ((60 * i - 30) * Math.PI) / 180;
+    return (x + HEX * Math.cos(a)).toFixed(1) + ',' + (y + HEX * Math.sin(a)).toFixed(1);
+  }).join(' ');
+}
+
+function frame(pts, pad) {
+  const xs = pts.flatMap(p => [p.x - pad, p.x + pad]);
+  const ys = pts.flatMap(p => [p.y - pad, p.y + pad]);
+  const minX = Math.min(...xs), minY = Math.min(...ys);
+  return { minX: +minX.toFixed(1), minY: +minY.toFixed(1),
+           w: +(Math.max(...xs) - minX).toFixed(1), h: +(Math.max(...ys) - minY).toFixed(1) };
+}
+
+function hexLevel(R, dropArr, given, id, title, rule, note) {
+  const { cells, adj } = hex(R, new Set(dropArr));
+  const { f, sols } = count(adj, 3, given, 3);
+  if (f !== 1) throw new Error(id + ': expected a unique colouring, got ' + f);
+  const pr = propagate(adj, 3, given);
+  const nodes = cells.map(c => ({ ...centre(c), poly: poly(c) }));
+  console.log(id + ': ' + adj.length + ' regions, unique=' + (f === 1) +
+    ', propagation places ' + pr.placed + ' in ' + pr.waves + ' waves, stalls with ' + pr.left);
+  return { id, title, rule, note, kind: 'hex', k: 3, nodes, adj, given, solution: sols[0],
+           view: frame(nodes, HEX),
+           stats: { regions: adj.length, waves: pr.waves, forced: pr.placed, choices: pr.left } };
+}
+
+let rng = 20260912;
+const rnd = () => ((rng = (rng * 1103515245 + 12345) & 0x7fffffff) / 0x7fffffff);
+
+function findGraph(n, p, k) {
+  for (let t = 0; t < 8000; t++) {
+    const adj = Array.from({ length: n }, () => []);
+    for (let i = 0; i < n; i++) for (let j = i + 1; j < n; j++) if (rnd() < p) { adj[i].push(j); adj[j].push(i); }
+    if (adj.some(a => a.length < 2)) continue;
+    const base = count(adj, k, {}, 1);
+    if (!base.f) continue;
+    if (count(adj, k - 1, {}, 1).f) continue; // must genuinely need k colours
+    const sol = base.sols[0];
+    for (const size of [2, 3]) {
+      const combos = [];
+      (function pick(s, acc) {
+        if (acc.length === size) { combos.push([...acc]); return; }
+        for (let i = s; i < n; i++) { acc.push(i); pick(i + 1, acc); acc.pop(); }
+      })(0, []);
+      for (const c of combos) {
+        const g = Object.fromEntries(c.map(i => [i, sol[i]]));
+        if (count(adj, k, g, 3).f !== 1) continue;
+        const pr = propagate(adj, k, g);
+        if (pr.left >= 6 && pr.waves === 0) return { adj, given: g, sol, pr };
+      }
+    }
+  }
+  return null;
+}
+
+function layout(adj, iters = 1200) {
+  const n = adj.length, W = 560, H = 420;
+  const pos = Array.from({ length: n }, (_, i) =>
+    ({ x: W / 2 + 180 * Math.cos((2 * Math.PI * i) / n), y: H / 2 + 150 * Math.sin((2 * Math.PI * i) / n) }));
+  const K = Math.sqrt((W * H) / n);
+  for (let it = 0; it < iters; it++) {
+    const disp = pos.map(() => ({ x: 0, y: 0 }));
+    for (let i = 0; i < n; i++) for (let j = i + 1; j < n; j++) {
+      let dx = pos[i].x - pos[j].x, dy = pos[i].y - pos[j].y;
+      const d = Math.hypot(dx, dy) || 0.01, rep = (K * K) / d;
+      dx /= d; dy /= d;
+      disp[i].x += dx * rep; disp[i].y += dy * rep; disp[j].x -= dx * rep; disp[j].y -= dy * rep;
+    }
+    for (let i = 0; i < n; i++) for (const j of adj[i]) {
+      if (j < i) continue;
+      let dx = pos[i].x - pos[j].x, dy = pos[i].y - pos[j].y;
+      const d = Math.hypot(dx, dy) || 0.01, att = (d * d) / K;
+      dx /= d; dy /= d;
+      disp[i].x -= dx * att; disp[i].y -= dy * att; disp[j].x += dx * att; disp[j].y += dy * att;
+    }
+    const t = Math.max(1, 12 * (1 - it / iters));
+    for (let i = 0; i < n; i++) {
+      const d = Math.hypot(disp[i].x, disp[i].y) || 0.01;
+      pos[i].x += (disp[i].x / d) * Math.min(d, t);
+      pos[i].y += (disp[i].y / d) * Math.min(d, t);
+    }
+  }
+  return pos.map(p => ({ x: +p.x.toFixed(1), y: +p.y.toFixed(1) }));
+}
+
+const L1 = hexLevel(1, [], { 3: 2, 0: 0 }, 'l1', 'Level 1 · The rule',
+  'Regions that touch can\u2019t share a colour.',
+  'Every move here is forced. Colour whichever region has one colour left, and watch it decide the next one.');
+
+const L2 = hexLevel(2, [2, 13, 9], { 6: 2, 13: 0, 14: 1 }, 'l2', 'Level 2 · When nothing is forced',
+  'Regions that touch can\u2019t share a colour.',
+  'The forced moves run out partway. When they do, colour the region with the fewest colours left.');
+
+const g = findGraph(14, 0.3, 3);
+if (!g) throw new Error('no level 3 graph found');
+const pos = layout(g.adj);
+const edges = g.adj.reduce((a, b) => a + b.length, 0) / 2;
+console.log('l3: 14 towers, ' + edges + ' overlaps, propagation places ' + g.pr.placed +
+  ' in ' + g.pr.waves + ' waves, stalls with ' + g.pr.left);
+
+const L3 = { id: 'l3', title: 'Level 3 · It was never a map',
+  rule: 'Towers whose signals overlap can\u2019t share a channel.',
+  note: 'Nothing is forced at the start. Find the tower with the fewest channels left and begin there.',
+  kind: 'graph', k: 3, nodes: pos, adj: g.adj, given: g.given, solution: g.sol,
+  view: frame(pos, 34),
+  stats: { regions: 14, waves: g.pr.waves, forced: g.pr.placed, choices: g.pr.left } };
+
+const header = [
+  '/**',
+  ' * GENERATED by scripts/generateLevels.mjs — do not hand-edit.',
+  ' *',
+  ' * The three study levels. Every one is brute-forced before being written',
+  ' * here: each has exactly ONE valid colouring given its pre-coloured',
+  ' * regions, which is what stops the interchangeable-colours symmetry from',
+  ' * making "unique" meaningless. Re-check with `npm run verify-levels`.',
+  ' *',
+  ' * The rung is set by how tight the graph is relative to three colours, not',
+  ' * by how many regions it has. A full hexagon gives every interior region',
+  ' * six neighbours, so domains collapse at once and the whole map falls out',
+  ' * of forced moves alone \u2014 a bigger hexagon is a longer level, not a harder',
+  ' * one, and the most-constrained-first heuristic never gets used. Carving',
+  ' * bays into the map (L2) and leaving the map altogether (L3) drop the',
+  ' * degree, leave domains genuinely ambiguous, and are what make that',
+  ' * heuristic necessary rather than decorative.',
+  ' */',
+  '',
+  'export interface ColourLevel {',
+  '  id: string;',
+  '  title: string;',
+  '  rule: string;',
+  '  note: string;',
+  '  kind: \'hex\' | \'graph\';',
+  '  k: number;',
+  '  nodes: { x: number; y: number; poly?: string }[];',
+  '  adj: number[][];',
+  '  given: Record<number, number>;',
+  '  solution: number[];',
+  '  view: { minX: number; minY: number; w: number; h: number };',
+  '  /** Measured, not guessed: how much of this level propagation can do alone. */',
+  '  stats: { regions: number; waves: number; forced: number; choices: number };',
+  '}',
+  '',
+].join('\n');
+
+writeFileSync(OUT,
+  header +
+  'export const LEVELS: ColourLevel[] = ' + JSON.stringify([L1, L2, L3], null, 2) + ';\n\n' +
+  'export const COLOURS = [\'#5ed3e8\', \'#ffc46b\', \'#f79ad3\'];\n' +
+  'export const COLOUR_NAMES = [\'Teal\', \'Amber\', \'Rose\'];\n');
+
+console.log('\nwrote ' + OUT);

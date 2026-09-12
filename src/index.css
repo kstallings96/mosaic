@@ -1,0 +1,85 @@
+/**
+ * MOSAIC — palette and base.
+ *
+ * Exactly three puzzle colours, and they are the only colours on screen
+ * that name a thing. Green and red are reserved for right and wrong, so a
+ * region can never be mistaken for a verdict or a verdict for a region.
+ * Contrast is kept high: this runs on classroom Chromebooks in bright
+ * rooms, and every text pair here clears WCAG AA.
+ */
+
+:root {
+  --ink-bg: #12101c;
+  --panel: #1c1930;
+  --panel-2: #262140;
+  --line: #3a3358;
+  --empty: rgba(255, 255, 255, 0.055);
+
+  /* The three. Deliberately far apart in hue, and far from red and green. */
+  --c1: #5ed3e8;
+  --c2: #ffc46b;
+  --c3: #f79ad3;
+
+  --ok: #8fe07a;
+  --bad: #ff7a8a;
+  --mrv: #ffc46b;
+
+  --ink: #f4f0ff;
+  --dim: #c2b8dc;
+  --faint: #8b82a8;
+
+  --display: 'Fredoka', ui-rounded, 'Segoe UI Variable Display', 'Nunito', system-ui, sans-serif;
+  --sans: 'Nunito', ui-rounded, 'Segoe UI', system-ui, Roboto, sans-serif;
+
+  color-scheme: dark;
+  font: 17px/1.5 var(--sans);
+  color: var(--ink);
+  background: var(--ink-bg);
+  -webkit-font-smoothing: antialiased;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  min-width: 320px;
+  background:
+    radial-gradient(1100px 620px at 78% -8%, rgba(94, 211, 232, 0.09), transparent 60%),
+    radial-gradient(900px 520px at 12% 108%, rgba(247, 154, 211, 0.08), transparent 60%),
+    var(--ink-bg);
+  background-attachment: fixed;
+  /* Touch-first: no double-tap zoom, no long-press text selection, and no
+     scroll stealing a press-and-hold on a Chromebook touchscreen. */
+  touch-action: manipulation;
+  -webkit-user-select: none;
+  user-select: none;
+}
+
+#root {
+  min-height: 100svh;
+}
+
+h1,
+h2,
+h3 {
+  font-family: var(--display);
+  font-weight: 500;
+  margin: 0 0 8px;
+}
+
+p {
+  margin: 0;
+}
+
+button {
+  font: inherit;
+}
+
+/* Every control clears the 44px touch minimum. */
+button,
+select,
+input {
+  min-height: 44px;
+}
