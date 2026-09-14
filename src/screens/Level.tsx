@@ -36,11 +36,11 @@ const HOW_TO: Record<string, { story: string; steps: string[] }> = {
     ],
   },
   l3: {
-    story: 'Three stages, one night. A line between two bands means a lot of the same people want to see both.',
+    story: 'Same rule, no map. A line between two animals means those two fight.',
     steps: [
-      'Each color is a time slot.',
-      'Two bands joined by a line cannot play at the same time.',
-      'Nothing is decided for you here. Start with the band that has the fewest slots left.',
+      'Each color is a zone of the zoo.',
+      'Two animals joined by a line cannot go in the same zone.',
+      'Nothing is decided for you here. Start with the animal that has the fewest zones left.',
     ],
   },
 };
@@ -406,7 +406,7 @@ export default function Level({
 
           <p className="palette-hint">
             {board.selected === null
-              ? `Tap a ${level.words.thing}`
+              ? `Tap a${/^[aeiou]/i.test(level.words.thing) ? 'n' : ''} ${level.words.thing}`
               : `${legal?.length ?? 0} ${level.words.slot}${legal?.length === 1 ? '' : 's'} left here`}
           </p>
 

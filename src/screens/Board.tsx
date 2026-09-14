@@ -2,6 +2,7 @@ import type { ColourLevel } from '../data/levels';
 import { COLOURS } from '../data/levels';
 import type { Board as BoardState } from '../lib/colouring';
 import { Weight, useCascade } from './Weight';
+import AnimalHead, { animalName } from './animals';
 
 /**
  * The board itself: a map on the early levels, a bare graph on the last.
@@ -36,6 +37,9 @@ export default function Board({
   onSelect: (region: number) => void;
   onPeek: (region: number | null) => void;
 }) {
+  // Animal heads need a bigger disc to sit in than a bare dot does.
+  const NODE_R = level.icons === 'animals' ? 34 : 30;
+
   const { cascade, cascadeKey } = useCascade(domains);
   const focus = peeking ?? selected;
   const neighbours = focus === null ? new Set<number>() : new Set(level.adj[focus]);
@@ -99,6 +103,7 @@ export default function Board({
               onPointerCancel={() => onPeek(null)}
               onPointerLeave={() => onPeek(null)}
             >
+              {level.icons === 'animals' && <title>{animalName(i)}</title>}
               {level.kind === 'hex' ? (
                 <>
                   <polygon
@@ -112,15 +117,28 @@ export default function Board({
                   <circle
                     cx={node.x}
                     cy={node.y}
-                    r={30}
+                    r={NODE_R}
                     fill={colour === undefined ? 'var(--empty)' : COLOURS[colour]}
                   />
-                  {locked && <circle className="pin" cx={node.x} cy={node.y} r={30} fill="none" />}
+                  {locked && <circle className="pin" cx={node.x} cy={node.y} r={NODE_R} fill="none" />}
+                  {level.icons === 'animals' && (
+                    <g
+                      className={`animal-wrap${colour === undefined ? ' on-empty' : ' on-filled'}`}
+                      transform={`translate(${node.x - 21} ${node.y - 21})`}
+                    >
+                      <AnimalHead index={i} size={42} />
+                    </g>
+                  )}
                 </>
               )}
 
               {n !== undefined && (
-                <foreignObject x={node.x - 17} y={node.y - 17} width={34} height={34}>
+                <foreignObject
+                  x={level.icons === 'animals' ? node.x + 11 : node.x - 17}
+                  y={level.icons === 'animals' ? node.y - 38 : node.y - 17}
+                  width={34}
+                  height={34}
+                >
                   <Weight
                     key={`${i}-${cascadeKey}`}
                     count={n}

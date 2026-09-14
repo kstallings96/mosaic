@@ -833,3 +833,39 @@
 .helper-actions .link-button {
   text-align: center;
 }
+
+/* ---------- the animals (level 3) ---------- */
+
+/* Shape carries identity, colour carries the zone. The ink flips so a head
+   stays readable whether its node is empty or filled. */
+.animal-wrap { pointer-events: none; }
+
+/* The shapes carry no fill of their own, so they inherit this one. Without
+   it they fall back to the SVG default of solid black and vanish against a
+   dark node. `.animal-eye` sets its own fill, so it still wins. */
+.animal { fill: currentColor; }
+.animal-wrap.on-empty .animal { color: var(--dim); }
+.animal-wrap.on-filled .animal { color: #16121f; }
+
+.animal-eye { fill: var(--ink-bg); }
+.animal-wrap.on-filled .animal-eye { fill: rgba(255, 255, 255, 0.82); }
+
+/* Interior detail - manes, muzzles, stripes, facial discs. Drawn in the
+   contrasting ink rather than the body ink at low opacity: same-colour
+   shapes stacked on a solid silhouette are invisible, which is how the
+   lion lost its mane and the zebra lost its stripes. */
+.animal-cut { fill: var(--ink-bg); fill-opacity: 0.5; }
+.animal-wrap.on-filled .animal-cut { fill: #fff; fill-opacity: 0.4; }
+
+/* A cut that has to survive on its own - stripes, spots, a face patch -
+   rather than just soften an edge. */
+.animal-cut.deep { fill-opacity: 0.8; }
+.animal-wrap.on-filled .animal-cut.deep { fill-opacity: 0.66; }
+
+/* The counter moved off the animal's face to the node's shoulder, so it
+   needs its own disc to stay legible against whatever is behind it. */
+.region .w {
+  background: var(--ink-bg);
+  border-radius: 50%;
+  box-shadow: 0 0 0 2px var(--ink-bg);
+}

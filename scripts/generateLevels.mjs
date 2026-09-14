@@ -69,6 +69,7 @@ function frame(pts, pad) {
 
 function hexLevel(R, dropArr, given, id, title, rule, note) {
   const words = { thing: 'region', slot: 'color' };
+  const icons = 'none';
   const { cells, adj } = hex(R, new Set(dropArr));
   const { f, sols } = count(adj, 3, given, 3);
   if (f !== 1) throw new Error(id + ': expected a unique colouring, got ' + f);
@@ -76,7 +77,7 @@ function hexLevel(R, dropArr, given, id, title, rule, note) {
   const nodes = cells.map(c => ({ ...centre(c), poly: poly(c) }));
   console.log(id + ': ' + adj.length + ' regions, unique=' + (f === 1) +
     ', propagation places ' + pr.placed + ' in ' + pr.waves + ' waves, stalls with ' + pr.left);
-  return { id, title, rule, note, words, kind: 'hex', k: 3, nodes, adj, given, solution: sols[0],
+  return { id, title, rule, note, words, icons, kind: 'hex', k: 3, nodes, adj, given, solution: sols[0],
            view: frame(nodes, HEX),
            stats: { regions: adj.length, waves: pr.waves, forced: pr.placed, choices: pr.left } };
 }
@@ -211,7 +212,35 @@ function bestLayout(adj, tries = 160) {
     const c = crossings(adj, pos);
     if (!best || c < best.c || (c === best.c && gap > best.gap)) best = { pos, c, gap };
   }
+  if (!best) return null;
+  best.pos = widen(best.pos, adj);
   return best;
+}
+
+/**
+ * Stretches the chosen drawing toward the shape of the screen it has to
+ * live on.
+ *
+ * The board is capped by height, so a tall narrow layout is scaled down to
+ * fit and every node shrinks with it — which is how eleven animal heads
+ * ended up too small to tell apart. Stretching x and y by different amounts
+ * is an affine map, and affine maps cannot create or remove a crossing, so
+ * this is free: the drawing keeps exactly the clarity it was chosen for.
+ * It is only kept if the nodes stay far enough apart afterwards.
+ */
+function widen(pos, adj, target = 1.6) {
+  const xs = pos.map((p) => p.x), ys = pos.map((p) => p.y);
+  const w = Math.max(...xs) - Math.min(...xs);
+  const h = Math.max(...ys) - Math.min(...ys);
+  if (w <= 0 || h <= 0) return pos;
+  const wanted = target * h;
+  if (w >= wanted) return pos;
+  const k = wanted / w;
+  const cx = (Math.max(...xs) + Math.min(...xs)) / 2;
+  const stretched = pos.map((p) => ({ x: +(cx + (p.x - cx) * k).toFixed(1), y: p.y }));
+  if (tightestPair(stretched) < 62) return pos;
+  if (crossings(adj, stretched) !== crossings(adj, pos)) return pos; // belt and braces
+  return stretched;
 }
 
 const L1 = hexLevel(1, [], { 3: 2, 0: 0 }, 'l1', 'Level 1 · One Rule',
@@ -227,14 +256,15 @@ if (!g) throw new Error('no level 3 graph found');
 const drawing = bestLayout(g.adj);
 if (!drawing) throw new Error('no readable layout found');
 const pos = drawing.pos;
-console.log('l3: ' + g.n + ' bands, ' + g.edges + ' shared-fan pairs, ' +
+console.log('l3: ' + g.n + ' animals, ' + g.edges + ' feuds, ' +
   drawing.c + ' line crossings (best of 160 layouts), propagation places ' +
   g.pr.placed + ' in ' + g.pr.waves + ' waves, stalls with ' + g.pr.left);
 
-const L3 = { id: 'l3', title: 'Level 3 · Festival Night',
-  rule: 'Bands that share fans can\u2019t play at the same time.',
-  note: 'Three stages, one night, and nothing here is decided for you.',
-  words: { thing: 'band', slot: 'slot' },
+const L3 = { id: 'l3', title: 'Level 3 · The Zoo',
+  rule: 'Animals that fight can\u2019t share a zone.',
+  note: 'Three zones, eleven animals, and nothing here is decided for you.',
+  words: { thing: 'animal', slot: 'zone' },
+  icons: 'animals',
   kind: 'graph', k: 3, nodes: pos, adj: g.adj, given: g.given, solution: g.sol,
   view: frame(pos, 34),
   stats: { regions: g.n, waves: g.pr.waves, forced: g.pr.placed, choices: g.pr.left } };
@@ -265,6 +295,8 @@ const header = [
   '  note: string;',
   '  /** What this level calls its pieces and its choices, so no component hard-codes a story. */',
   '  words: { thing: string; slot: string };',
+  '  /** Whether the pieces carry their own pictures. */',
+  '  icons: \'none\' | \'animals\';',
   '  kind: \'hex\' | \'graph\';',
   '  k: number;',
   '  nodes: { x: number; y: number; poly?: string }[];',

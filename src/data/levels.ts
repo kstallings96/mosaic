@@ -23,6 +23,8 @@ export interface ColourLevel {
   note: string;
   /** What this level calls its pieces and its choices, so no component hard-codes a story. */
   words: { thing: string; slot: string };
+  /** Whether the pieces carry their own pictures. */
+  icons: 'none' | 'animals';
   kind: 'hex' | 'graph';
   k: number;
   nodes: { x: number; y: number; poly?: string }[];
@@ -43,6 +45,7 @@ export const LEVELS: ColourLevel[] = [
       "thing": "region",
       "slot": "color"
     },
+    "icons": "none",
     "kind": "hex",
     "k": 3,
     "nodes": [
@@ -157,6 +160,7 @@ export const LEVELS: ColourLevel[] = [
       "thing": "region",
       "slot": "color"
     },
+    "icons": "none",
     "kind": "hex",
     "k": 3,
     "nodes": [
@@ -369,58 +373,59 @@ export const LEVELS: ColourLevel[] = [
   },
   {
     "id": "l3",
-    "title": "Level 3 · Festival Night",
-    "rule": "Bands that share fans can’t play at the same time.",
-    "note": "Three stages, one night, and nothing here is decided for you.",
+    "title": "Level 3 · The Zoo",
+    "rule": "Animals that fight can’t share a zone.",
+    "note": "Three zones, eleven animals, and nothing here is decided for you.",
     "words": {
-      "thing": "band",
-      "slot": "slot"
+      "thing": "animal",
+      "slot": "zone"
     },
+    "icons": "animals",
     "kind": "graph",
     "k": 3,
     "nodes": [
       {
-        "x": 401.6,
+        "x": 559.1,
         "y": 307.3
       },
       {
-        "x": 352.5,
+        "x": 455.9,
         "y": 113.9
       },
       {
-        "x": 172.8,
+        "x": 77.9,
         "y": 324.6
       },
       {
-        "x": 504.4,
+        "x": 775.4,
         "y": -115.2
       },
       {
-        "x": 41.2,
+        "x": -198.9,
         "y": 387.9
       },
       {
-        "x": 206.4,
+        "x": 148.6,
         "y": 445
       },
       {
-        "x": 13.2,
+        "x": -257.8,
         "y": 188.2
       },
       {
-        "x": 458.6,
+        "x": 679,
         "y": 101.2
       },
       {
-        "x": 322.8,
+        "x": 393.4,
         "y": -47.5
       },
       {
-        "x": 214.2,
+        "x": 165,
         "y": 186.4
       },
       {
-        "x": 394.2,
+        "x": 543.6,
         "y": 530.5
       }
     ],
@@ -503,9 +508,9 @@ export const LEVELS: ColourLevel[] = [
       1
     ],
     "view": {
-      "minX": -20.8,
+      "minX": -291.8,
       "minY": -149.2,
-      "w": 559.2,
+      "w": 1101.2,
       "h": 713.7
     },
     "stats": {
