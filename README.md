@@ -24,9 +24,11 @@ Difficulty is set by how tight the graph is relative to three colours, **not by 
 |---|---|---|---|
 | 1 · The rule | 7-region map | all 5, over 3 waves | **0** |
 | 2 · When nothing is forced | 16-region carved map | 7, over 7 waves | **6** |
-| 3 · It was never a map | 14-node graph | 0 | **12** |
+| 3 · The festival | 11-node graph, 18 edges | 0 | **8** |
 
-Level 3 drops the geography: the same rule, now radio towers whose signals overlap. Nothing is forced at the start, so the heuristic is the only way in, and a wrong choice can reach a genuine dead end.
+Level 3 drops the geography: the same rule, now bands that share fans and cannot play in the same slot. Nothing is forced at the start, so the heuristic is the only way in, and a wrong choice can reach a genuine dead end.
+
+Its graph is deliberately sparse. An earlier instance had 14 nodes and 33 edges and could not be drawn clearly by anything — measured against the shipped drawing, the best circular layout scored 47 line crossings where force-directed scored 23, so the arrangement was never the problem, the density was. The generator now hunts for the sparsest graph that still has every property the level needs, and picks its drawing by measuring 160 candidate layouts and keeping the clearest. The result crosses 3 lines.
 
 ## Unique solutions, and the symmetry problem
 

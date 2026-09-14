@@ -21,7 +21,9 @@ export interface ColourLevel {
   title: string;
   rule: string;
   note: string;
-  kind: 'hex' | 'graph' | 'tables';
+  /** What this level calls its pieces and its choices, so no component hard-codes a story. */
+  words: { thing: string; slot: string };
+  kind: 'hex' | 'graph';
   k: number;
   nodes: { x: number; y: number; poly?: string }[];
   adj: number[][];
@@ -37,6 +39,10 @@ export const LEVELS: ColourLevel[] = [
     "title": "Level 1 · The rule",
     "rule": "Regions that touch can’t share a colour.",
     "note": "Every move here is forced. Colour whichever region has one colour left, and watch it decide the next one.",
+    "words": {
+      "thing": "region",
+      "slot": "colour"
+    },
     "kind": "hex",
     "k": 3,
     "nodes": [
@@ -147,6 +153,10 @@ export const LEVELS: ColourLevel[] = [
     "title": "Level 2 · When nothing is forced",
     "rule": "Regions that touch can’t share a colour.",
     "note": "The forced moves run out partway. When they do, colour the region with the fewest colours left.",
+    "words": {
+      "thing": "region",
+      "slot": "colour"
+    },
     "kind": "hex",
     "k": 3,
     "nodes": [
@@ -359,196 +369,150 @@ export const LEVELS: ColourLevel[] = [
   },
   {
     "id": "l3",
-    "title": "Level 3 · No map at all",
-    "rule": "Rivals can’t share a table.",
-    "note": "Nothing here is decided for you.",
-    "kind": "tables",
+    "title": "Level 3 · The festival",
+    "rule": "Bands that share fans can’t play at the same time.",
+    "note": "Three time slots, and nothing here is decided for you.",
+    "words": {
+      "thing": "band",
+      "slot": "slot"
+    },
+    "kind": "graph",
     "k": 3,
     "nodes": [
       {
-        "x": 555.4,
-        "y": 137.3
+        "x": 401.6,
+        "y": 307.3
       },
       {
-        "x": 178,
-        "y": 236.9
+        "x": 352.5,
+        "y": 113.9
       },
       {
-        "x": 370.4,
-        "y": 90
+        "x": 172.8,
+        "y": 324.6
       },
       {
-        "x": 143.9,
-        "y": 72.6
+        "x": 504.4,
+        "y": -115.2
       },
       {
-        "x": 203.2,
-        "y": 376.9
+        "x": 41.2,
+        "y": 387.9
       },
       {
-        "x": 82.6,
-        "y": 429.6
+        "x": 206.4,
+        "y": 445
       },
       {
-        "x": 455.9,
-        "y": 184.4
+        "x": 13.2,
+        "y": 188.2
       },
       {
-        "x": 389.6,
-        "y": 302.9
+        "x": 458.6,
+        "y": 101.2
       },
       {
-        "x": 248.4,
-        "y": 126.9
+        "x": 322.8,
+        "y": -47.5
       },
       {
-        "x": 315.8,
-        "y": 202.7
+        "x": 214.2,
+        "y": 186.4
       },
       {
-        "x": 200.1,
-        "y": 5.3
-      },
-      {
-        "x": 363.5,
-        "y": 18.2
-      },
-      {
-        "x": 70.5,
-        "y": 254.8
-      },
-      {
-        "x": 264,
-        "y": 294.4
+        "x": 394.2,
+        "y": 530.5
       }
     ],
     "adj": [
       [
-        6,
-        7,
-        11
-      ],
-      [
-        4,
-        7,
-        10,
-        12,
-        13
-      ],
-      [
-        6,
-        10,
-        11,
-        13
-      ],
-      [
-        9,
-        10,
-        11,
-        12
-      ],
-      [
         1,
-        5,
+        2,
         7,
-        9,
-        12
-      ],
-      [
-        4,
-        12,
-        13
+        10
       ],
       [
         0,
-        2,
         7,
         8,
         9
       ],
       [
         0,
+        5,
+        6
+      ],
+      [
+        7,
+        8
+      ],
+      [
+        5,
+        9
+      ],
+      [
+        2,
+        4,
+        9,
+        10
+      ],
+      [
+        2,
+        9
+      ],
+      [
+        0,
+        1,
+        3,
+        9
+      ],
+      [
+        1,
+        3,
+        9
+      ],
+      [
         1,
         4,
-        6,
-        9,
-        13
-      ],
-      [
-        6,
-        10,
-        11,
-        12,
-        13
-      ],
-      [
-        3,
-        4,
+        5,
         6,
         7,
-        11,
-        13
-      ],
-      [
-        1,
-        2,
-        3,
         8
       ],
       [
         0,
-        2,
-        3,
-        8,
-        9
-      ],
-      [
-        1,
-        3,
-        4,
-        5,
-        8
-      ],
-      [
-        1,
-        2,
-        5,
-        7,
-        8,
-        9
+        5
       ]
     ],
     "given": {
-      "0": 0,
-      "10": 2
+      "2": 1,
+      "3": 0,
+      "8": 2
     },
     "solution": [
       0,
-      0,
-      0,
       1,
       1,
       0,
       1,
       2,
+      2,
+      2,
+      2,
       0,
-      0,
-      2,
-      2,
-      2,
       1
     ],
     "view": {
-      "minX": 36.5,
-      "minY": -28.7,
-      "w": 552.9,
-      "h": 492.3
+      "minX": -20.8,
+      "minY": -149.2,
+      "w": 559.2,
+      "h": 713.7
     },
     "stats": {
-      "regions": 14,
+      "regions": 11,
       "waves": 0,
       "forced": 0,
-      "choices": 12
+      "choices": 8
     }
   }
 ];
