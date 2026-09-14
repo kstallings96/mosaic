@@ -27,8 +27,10 @@ export type EventType =
   | 'reset'
   | 'dead_end_reached'
   | 'no_forced_moves'
+  // 'hint_suggest' was removed with the one-move shortcut button: it let a
+  // student advance without reasoning, which is the behaviour the study is
+  // trying to measure. Nothing emits it, so it is not declared.
   | 'hint_most_constrained'
-  | 'hint_suggest'
   | 'hint_walkthrough_start'
   | 'walkthrough_step'
   | 'walkthrough_stopped'

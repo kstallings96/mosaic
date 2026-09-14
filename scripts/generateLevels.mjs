@@ -68,7 +68,7 @@ function frame(pts, pad) {
 }
 
 function hexLevel(R, dropArr, given, id, title, rule, note) {
-  const words = { thing: 'region', slot: 'colour' };
+  const words = { thing: 'region', slot: 'color' };
   const { cells, adj } = hex(R, new Set(dropArr));
   const { f, sols } = count(adj, 3, given, 3);
   if (f !== 1) throw new Error(id + ': expected a unique colouring, got ' + f);
@@ -214,13 +214,13 @@ function bestLayout(adj, tries = 160) {
   return best;
 }
 
-const L1 = hexLevel(1, [], { 3: 2, 0: 0 }, 'l1', 'Level 1 · The rule',
-  'Regions that touch can\u2019t share a colour.',
-  'Every move here is forced. Colour whichever region has one colour left, and watch it decide the next one.');
+const L1 = hexLevel(1, [], { 3: 2, 0: 0 }, 'l1', 'Level 1 · One Rule',
+  'Two regions that touch can\u2019t be the same color.',
+  'Every move here decides itself. Find a region with one color left, fill it in, and watch what it does to the ones around it.');
 
-const L2 = hexLevel(2, [2, 13, 9], { 6: 2, 13: 0, 14: 1 }, 'l2', 'Level 2 · When nothing is forced',
-  'Regions that touch can\u2019t share a colour.',
-  'The forced moves run out partway. When they do, colour the region with the fewest colours left.');
+const L2 = hexLevel(2, [2, 13, 9], { 6: 2, 13: 0, 14: 1 }, 'l2', 'Level 2 · Your Call',
+  'Two regions that touch can\u2019t be the same color.',
+  'The free moves run out partway through. When they do, go for the region with the fewest colors left.');
 
 const g = findGraph(3);
 if (!g) throw new Error('no level 3 graph found');
@@ -231,9 +231,9 @@ console.log('l3: ' + g.n + ' bands, ' + g.edges + ' shared-fan pairs, ' +
   drawing.c + ' line crossings (best of 160 layouts), propagation places ' +
   g.pr.placed + ' in ' + g.pr.waves + ' waves, stalls with ' + g.pr.left);
 
-const L3 = { id: 'l3', title: 'Level 3 · The festival',
+const L3 = { id: 'l3', title: 'Level 3 · Festival Night',
   rule: 'Bands that share fans can\u2019t play at the same time.',
-  note: 'Three time slots, and nothing here is decided for you.',
+  note: 'Three stages, one night, and nothing here is decided for you.',
   words: { thing: 'band', slot: 'slot' },
   kind: 'graph', k: 3, nodes: pos, adj: g.adj, given: g.given, solution: g.sol,
   view: frame(pos, 34),
@@ -282,6 +282,6 @@ writeFileSync(OUT,
   header +
   'export const LEVELS: ColourLevel[] = ' + JSON.stringify([L1, L2, L3], null, 2) + ';\n\n' +
   'export const COLOURS = [\'#5ed3e8\', \'#ff9d5c\', \'#f79ad3\'];\n' +
-  'export const COLOUR_NAMES = [\'Teal\', \'Orange\', \'Rose\'];\n');
+  'export const COLOUR_NAMES = [\'Teal\', \'Orange\', \'Pink\'];\n');
 
 console.log('\nwrote ' + OUT);

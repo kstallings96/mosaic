@@ -71,11 +71,11 @@ export default function End({ sessionId }: { sessionId: string }) {
     <div className="screen end-screen">
       <div className="end-card">
         <h1 onClick={onHeaderTap}>MOSAIC COMPLETE</h1>
-        <p className="wordmark-sub">Every map coloured</p>
+        <p className="wordmark-sub">All three solved</p>
         <p className="lede">
-          Nice work{loginInfo ? `, ${loginInfo.firstName} ${loginInfo.lastInitial}` : ''}!
+          Nice work{loginInfo ? `, ${loginInfo.firstName}` : ''}. You finished all three.
         </p>
-        <p>Please let the researcher know you are finished.</p>
+        <p>Let the researcher know you’re done.</p>
 
         <div className="restart-row">
           <button type="button" className={`restart${confirming ? ' armed' : ''}`} onClick={onRestart}>

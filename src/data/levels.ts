@@ -36,12 +36,12 @@ export interface ColourLevel {
 export const LEVELS: ColourLevel[] = [
   {
     "id": "l1",
-    "title": "Level 1 · The rule",
-    "rule": "Regions that touch can’t share a colour.",
-    "note": "Every move here is forced. Colour whichever region has one colour left, and watch it decide the next one.",
+    "title": "Level 1 · One Rule",
+    "rule": "Two regions that touch can’t be the same color.",
+    "note": "Every move here decides itself. Find a region with one color left, fill it in, and watch what it does to the ones around it.",
     "words": {
       "thing": "region",
-      "slot": "colour"
+      "slot": "color"
     },
     "kind": "hex",
     "k": 3,
@@ -150,12 +150,12 @@ export const LEVELS: ColourLevel[] = [
   },
   {
     "id": "l2",
-    "title": "Level 2 · When nothing is forced",
-    "rule": "Regions that touch can’t share a colour.",
-    "note": "The forced moves run out partway. When they do, colour the region with the fewest colours left.",
+    "title": "Level 2 · Your Call",
+    "rule": "Two regions that touch can’t be the same color.",
+    "note": "The free moves run out partway through. When they do, go for the region with the fewest colors left.",
     "words": {
       "thing": "region",
-      "slot": "colour"
+      "slot": "color"
     },
     "kind": "hex",
     "k": 3,
@@ -369,9 +369,9 @@ export const LEVELS: ColourLevel[] = [
   },
   {
     "id": "l3",
-    "title": "Level 3 · The festival",
+    "title": "Level 3 · Festival Night",
     "rule": "Bands that share fans can’t play at the same time.",
-    "note": "Three time slots, and nothing here is decided for you.",
+    "note": "Three stages, one night, and nothing here is decided for you.",
     "words": {
       "thing": "band",
       "slot": "slot"
@@ -518,4 +518,4 @@ export const LEVELS: ColourLevel[] = [
 ];
 
 export const COLOURS = ['#5ed3e8', '#ff9d5c', '#f79ad3'];
-export const COLOUR_NAMES = ['Teal', 'Orange', 'Rose'];
+export const COLOUR_NAMES = ['Teal', 'Orange', 'Pink'];

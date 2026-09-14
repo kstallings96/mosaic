@@ -713,3 +713,14 @@
   }
 }
 
+
+/* The consequence half of a walkthrough step. Set apart from the reason
+   above it, because the pair is the point: this is what that did. */
+.walk-result {
+  font-size: 14.5px;
+  line-height: 1.5;
+  color: var(--dim);
+  margin: 0 0 12px;
+  padding-left: 11px;
+  border-left: 2px solid var(--c1);
+}

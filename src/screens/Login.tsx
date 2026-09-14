@@ -50,9 +50,9 @@ export default function Login({ sessionId, onComplete }: { sessionId: string; on
     <div className="screen login-screen">
       <div className="login-card">
         <h1 className="wordmark">MOSAIC</h1>
-        <p className="wordmark-sub">No two neighbours alike</p>
+        <p className="wordmark-sub">No two neighbors the same</p>
         <div className="rule-line" />
-        <p className="lede">Sign in to begin.</p>
+        <p className="lede">Put your name in and let’s go.</p>
 
         <form onSubmit={handleBegin} noValidate>
           <div className="field">

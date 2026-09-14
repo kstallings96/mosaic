@@ -144,6 +144,38 @@ export function suggest(level: ColourLevel, board: Board): Suggestion | null {
   return { region, colour, optionsLeft, reason };
 }
 
+/**
+ * Exactly what a placement did to everything else.
+ *
+ * The helper used to say a move had been made and leave the consequence
+ * implied. The consequence IS the lesson, so it is measured here and said
+ * out loud: how many neighbours lost an option, which of them are now down
+ * to one choice and therefore decided, and which have run out entirely.
+ */
+export interface Effect {
+  /** Neighbours that lost at least one option because of this move. */
+  narrowed: number[];
+  /** Neighbours now down to a single choice — decided, not guessed. */
+  nowForced: number[];
+  /** Neighbours with nothing left, which means this move cannot stand. */
+  nowDead: number[];
+}
+
+export function effectOf(level: ColourLevel, before: Board, after: Board, region: number): Effect {
+  const narrowed: number[] = [];
+  const nowForced: number[] = [];
+  const nowDead: number[] = [];
+  for (const n of level.adj[region]) {
+    if (after[n] !== undefined) continue;
+    const had = domain(level, before, n).length;
+    const has = domain(level, after, n).length;
+    if (has < had) narrowed.push(n);
+    if (has === 1) nowForced.push(n);
+    if (has === 0) nowDead.push(n);
+  }
+  return { narrowed, nowForced, nowDead };
+}
+
 /** What a placement ruled out, for the line the helper shows afterwards. */
 export function prunedBy(level: ColourLevel, before: Board, after: Board): number {
   const a = allDomains(level, before);

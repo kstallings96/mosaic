@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { COLOURS, COLOUR_NAMES } from '../data/levels';
 import type { ColourLevel } from '../data/levels';
-import { domain, suggest } from '../lib/colouring';
+import { domain, effectOf, mostConstrained, suggest } from '../lib/colouring';
 import { logEvent } from '../lib/logger';
 import { useColourBoard } from '../lib/useColourBoard';
 import { useScreenTiming } from '../lib/useScreenTiming';
@@ -16,37 +16,79 @@ const WALK_STEP_MS = 1100;
 
 const HOW_TO: Record<string, { story: string; steps: string[] }> = {
   l1: {
-    story: 'Colour the whole map. The only rule is the one at the top.',
+    story: 'Color the whole map. There is only one rule, and it is at the top of the screen.',
     steps: [
-      'Tap a region, then tap a colour.',
-      'A colour a neighbour already used is crossed out — you cannot pick it.',
-      'The ring with a 1 means only one colour still fits. Those are free.',
+      'Tap a region, then tap a color.',
+      'A color that a neighbor already took gets crossed out. You cannot pick it.',
+      'A green 1 means only one color still fits. Those are free — take them.',
       'Press and hold any region to see which ones it touches.',
     ],
   },
   l2: {
-    story: 'A bigger territory. This one does not fill itself in all the way.',
+    story: 'A bigger map. This one will not fill itself in all the way.',
     steps: [
-      'Same rule, same controls.',
-      'Take the free ones first — the regions showing a 1.',
-      'They will run out. When they do, pick the region with the fewest colours left.',
-      'A red 0 means a region has nothing left. Undo and try a different colour.',
+      'Same rule, same buttons.',
+      'Grab the free ones first — the regions showing a green 1.',
+      'They run out partway. Then you pick, and the smart pick is the region with the fewest colors left.',
+      'A red 0 means a region has nothing left. Hit Undo and try something else.',
     ],
   },
   l3: {
-    story: 'Same rule, no map. A line means the same people want to see both bands.',
+    story: 'Three stages, one night. A line between two bands means a lot of the same people want to see both.',
     steps: [
-      'Each colour is a time slot.',
+      'Each color is a time slot.',
       'Two bands joined by a line cannot play at the same time.',
-      'Nothing is forced here. Start with the band that has the fewest slots left.',
+      'Nothing is decided for you here. Start with the band that has the fewest slots left.',
     ],
   },
 };
 
+
+/**
+ * What the move just did, in plain words.
+ *
+ * This is the half that teaches. Saying "placed" and stopping leaves the
+ * consequence for the student to work out at exactly the moment they are
+ * least likely to bother; naming how many neighbours lost an option, and
+ * which of them the rule has now decided outright, is the cascade said out
+ * loud instead of merely animated.
+ */
+function describeResult(
+  level: ColourLevel,
+  colour: number,
+  effect: { narrowed: number[]; nowForced: number[]; nowDead: number[] },
+): string {
+  const slot = level.words.slot;
+  const thing = level.words.thing;
+  const name = COLOUR_NAMES[colour].toLowerCase();
+
+  const took =
+    effect.narrowed.length === 0
+      ? `Nothing else was waiting on it, so no other ${thing} changed.`
+      : `That takes ${name} away from ${effect.narrowed.length} ${thing}${
+          effect.narrowed.length === 1 ? '' : 's'
+        } it is joined to.`;
+
+  if (effect.nowDead.length > 0) {
+    return `${took} And now ${effect.nowDead.length} of them has no ${slot}s left at all, which means something earlier has to come back out.`;
+  }
+  if (effect.nowForced.length > 0) {
+    return `${took} ${effect.nowForced.length} of them ${
+      effect.nowForced.length === 1 ? 'is' : 'are'
+    } now down to one ${slot} — so the rule just decided ${
+      effect.nowForced.length === 1 ? 'that one' : 'those'
+    } for free. That is the part worth watching.`;
+  }
+  return `${took} Nothing is down to one ${slot} yet, so I have to count again.`;
+}
+
 interface Step {
   region: number;
   colour: number;
-  reason: string;
+  /** Said before the move: what it is looking at, and why that one. */
+  looking: string;
+  /** Said after: what the move actually did to everything else. */
+  result: string;
   phase: 'considering' | 'placed';
   index: number;
   total: number;
@@ -135,22 +177,7 @@ export default function Level({
     );
   }
 
-  function handleSuggest() {
-    board.countHint();
-    const move = suggest(level, board.boardRef.current);
-    if (!move) {
-      addReason('I cannot finish from here — something already placed rules out every ending. Undo a move.');
-      return;
-    }
-    logEvent(sessionId, 'hint_suggest', {
-      level: level.id,
-      region: move.region,
-      colour: move.colour,
-      optionsLeft: move.optionsLeft,
-    });
-    board.applyDirect(move.region, move.colour);
-    addReason(`${move.reason} I made it ${COLOUR_NAMES[move.colour].toLowerCase()}.`);
-  }
+
 
   function startWalkthrough(auto: boolean) {
     if (walkRef.current) return;
@@ -168,7 +195,20 @@ export default function Level({
       walkRef.current = null;
       return;
     }
-    const next: Step = { ...move, phase: 'considering', index, total };
+    const thing = level.words.thing;
+    const slot = level.words.slot;
+    const tied = mostConstrained(level, board.boardRef.current).length;
+
+    // Said before anything moves, so the reasoning stands on its own instead
+    // of being justified after the fact by an answer appearing.
+    const looking =
+      move.optionsLeft === 1
+        ? 'I counted how many ' + slot + 's each ' + thing + ' has left. This one is down to 1, so I am not guessing. The rule already picked it.'
+        : 'I counted how many ' + slot + 's each ' + thing + ' has left. The smallest number is ' + move.optionsLeft +
+          (tied > 1 ? ', and ' + tied + ' of them are tied there' : '') +
+          '. I start there, because the fewer choices something has, the harder it is to get it wrong.';
+
+    const next: Step = { ...move, looking, result: '', phase: 'considering', index, total };
     setWalk(next);
     walkRef.current = next;
   }
@@ -176,17 +216,24 @@ export default function Level({
   function commitConsidered() {
     const current = walkRef.current;
     if (!current) return;
+    const before = board.boardRef.current;
+    const after = { ...before, [current.region]: current.colour };
+    const effect = effectOf(level, before, after, current.region);
     board.applyDirect(current.region, current.colour);
     logEvent(sessionId, 'walkthrough_step', {
       level: level.id,
       index: current.index,
       region: current.region,
       colour: current.colour,
+      narrowed: effect.narrowed.length,
+      nowForced: effect.nowForced.length,
     });
-    const next: Step = { ...current, phase: 'placed' };
+
+    const result = describeResult(level, current.colour, effect);
+    const next: Step = { ...current, result, phase: 'placed' };
     setWalk(next);
     walkRef.current = next;
-    addReason(current.reason);
+    addReason(result);
   }
 
   async function autoPlay(index: number, total: number) {
@@ -196,12 +243,16 @@ export default function Level({
       walkRef.current = null;
       return;
     }
-    const step: Step = { ...move, phase: 'placed', index, total };
+    const before = board.boardRef.current;
+    const after = { ...before, [move.region]: move.colour };
+    const effect = effectOf(level, before, after, move.region);
+    const result = describeResult(level, move.colour, effect);
+    const step: Step = { ...move, looking: move.reason, result, phase: 'placed', index, total };
     setWalk(step);
     walkRef.current = step;
     board.applyDirect(move.region, move.colour);
     logEvent(sessionId, 'walkthrough_step', { level: level.id, index, region: move.region, auto: true });
-    addReason(move.reason);
+    addReason(result);
     window.setTimeout(() => void autoPlay(index + 1, total), WALK_STEP_MS);
   }
 
@@ -243,7 +294,7 @@ export default function Level({
             ) : (
               <span className="clock unlocked">Helper ready</span>
             ))}
-          <span className="remaining">{board.remaining} to go</span>
+          <span className="remaining">{board.remaining} left</span>
         </div>
       </header>
 
@@ -268,9 +319,7 @@ export default function Level({
               neighbour has taken stays visible and struck out, so the
               shrinking is watched rather than inferred.
 
-              The dinner party has no palette. The tables themselves do
-              this job and do it better, because the guest standing in the
-              way is sitting at the table you cannot use. */}
+              shrinking is watched rather than inferred. */}
           <div className="palette">
             {COLOURS.slice(0, level.k).map((hex, v) => {
               const allowed = legal ? legal.includes(v) : true;
@@ -318,16 +367,15 @@ export default function Level({
                 HELPER
               </div>
 
+              {!walk && <p className="assist-line">Stuck? Ask me. I will show my work.</p>}
+
               {!walk && (
                 <div className="assist-buttons">
                   <button type="button" className="assist-button" onClick={handleTightest}>
-                    Which is tightest?
-                  </button>
-                  <button type="button" className="assist-button" onClick={handleSuggest}>
-                    Make one move
+                    Which one is stuck the most?
                   </button>
                   <button type="button" className="assist-button" onClick={() => startWalkthrough(false)}>
-                    Walk me through
+                    Show me how you would do it
                   </button>
                 </div>
               )}
@@ -335,12 +383,19 @@ export default function Level({
               {walk && (
                 <div className="walk">
                   <p className="walk-step">
-                    Step {walk.index + 1} of {walk.total} · {walk.phase === 'considering' ? 'choosing' : 'placed'}
+                    Step {walk.index + 1} of {walk.total}
+                    {walk.phase === 'considering' ? ' \u00b7 picking' : ' \u00b7 what that did'}
                   </p>
-                  <p className="walk-reason">{walk.reason}</p>
+
+                  {/* Both halves stay up once the move lands, so the reason
+                      and its consequence can be read together instead of the
+                      reason scrolling away the moment it pays off. */}
+                  <p className="walk-reason">{walk.looking}</p>
+                  {walk.phase === 'placed' && <p className="walk-result">{walk.result}</p>}
+
                   {walk.phase === 'considering' ? (
                     <button type="button" className="assist-button" onClick={commitConsidered}>
-                      Colour it
+                      OK, fill it in
                     </button>
                   ) : (
                     <button
@@ -348,11 +403,11 @@ export default function Level({
                       className="assist-button"
                       onClick={() => consider(walk.index + 1, walk.total)}
                     >
-                      Next step
+                      What happens next?
                     </button>
                   )}
                   <button type="button" className="link-button" onClick={stopWalkthrough}>
-                    Stop and try myself
+                    Stop — let me try
                   </button>
                 </div>
               )}
@@ -373,14 +428,18 @@ export default function Level({
 
       <p className="foot">
         {board.solved ? (
-          <strong className="ok">Done — nothing joined shares a {level.words.slot}.</strong>
+          <strong className="ok">
+            That’s it — nothing that touches shares a {level.words.slot}.
+          </strong>
         ) : board.dead.length > 0 ? (
           <strong className="bad">
-            One {level.words.thing} has no {level.words.slot}s left. Undo and try another.
+            One {level.words.thing} has no {level.words.slot}s left at all. Hit Undo and change
+            something.
           </strong>
         ) : board.noneForced ? (
           <strong className="mrv">
-            Nothing is forced now — take the {level.words.thing} with the fewest {level.words.slot}s left.
+            No free moves left. Your call now — go for the {level.words.thing} with the
+            fewest {level.words.slot}s.
           </strong>
         ) : (
           `Press and hold a ${level.words.thing} to see what it is joined to.`

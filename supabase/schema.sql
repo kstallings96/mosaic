@@ -93,5 +93,5 @@ create policy anon_insert_events on events for insert to anon with check (true);
 --
 --   select payload->>'level' as level, type, count(*)
 --   from events
---   where type in ('hint_most_constrained', 'hint_suggest', 'hint_walkthrough_start')
+--   where type in ('hint_most_constrained', 'hint_walkthrough_start')
 --   group by 1, 2 order by 1, 2;
