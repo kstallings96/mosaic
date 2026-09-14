@@ -21,7 +21,7 @@ export interface ColourLevel {
   title: string;
   rule: string;
   note: string;
-  kind: 'hex' | 'graph';
+  kind: 'hex' | 'graph' | 'tables';
   k: number;
   nodes: { x: number; y: number; poly?: string }[];
   adj: number[][];
@@ -361,8 +361,8 @@ export const LEVELS: ColourLevel[] = [
     "id": "l3",
     "title": "Level 3 · No map at all",
     "rule": "Rivals can’t share a table.",
-    "note": "Each colour is a table. Nothing here is decided for you.",
-    "kind": "graph",
+    "note": "Nothing here is decided for you.",
+    "kind": "tables",
     "k": 3,
     "nodes": [
       {

@@ -6,6 +6,7 @@ import { logEvent } from '../lib/logger';
 import { useColourBoard } from '../lib/useColourBoard';
 import { useScreenTiming } from '../lib/useScreenTiming';
 import Board from './Board';
+import TableBoard from './TableBoard';
 import HowToPlay from './HowToPlay';
 
 /** How long the student gets before the helper appears. */
@@ -250,23 +251,46 @@ export default function Level({
       {board.message && <div className="banner warn">{board.message}</div>}
 
       <div className={`level-body${locked ? ' locked' : ''}`}>
-        <Board
-          level={level}
-          board={board.board}
-          domains={board.domains}
-          selected={board.selected}
-          peeking={peeking}
-          tightest={board.tightest}
-          showTightest={showTightest}
-          spotlight={walk?.phase === 'considering' ? walk.region : null}
-          onSelect={board.select}
-          onPeek={setPeeking}
-        />
+        {level.kind === 'tables' ? (
+          <TableBoard
+            level={level}
+            board={board.board}
+            domains={board.domains}
+            selected={board.selected}
+            peeking={peeking}
+            tightest={board.tightest}
+            showTightest={showTightest}
+            spotlight={walk?.phase === 'considering' ? walk.region : null}
+            onSelect={board.select}
+            onPeek={setPeeking}
+            onSeat={(table) => {
+              if (!locked) board.paint(table);
+            }}
+          />
+        ) : (
+          <Board
+            level={level}
+            board={board.board}
+            domains={board.domains}
+            selected={board.selected}
+            peeking={peeking}
+            tightest={board.tightest}
+            showTightest={showTightest}
+            spotlight={walk?.phase === 'considering' ? walk.region : null}
+            onSelect={board.select}
+            onPeek={setPeeking}
+          />
+        )}
 
         <aside className="side">
-          {/* The palette IS the selected region's domain. A colour a
+          {/* The palette IS the selected region's domain: a colour a
               neighbour has taken stays visible and struck out, so the
-              domain shrinking is watched rather than inferred. */}
+              shrinking is watched rather than inferred.
+
+              The dinner party has no palette. The tables themselves do
+              this job and do it better, because the guest standing in the
+              way is sitting at the table you cannot use. */}
+          {level.kind !== 'tables' && (
           <div className="palette">
             {COLOURS.slice(0, level.k).map((hex, v) => {
               const allowed = legal ? legal.includes(v) : true;
@@ -291,11 +315,16 @@ export default function Level({
               );
             })}
           </div>
+          )}
 
           <p className="palette-hint">
             {board.selected === null
-              ? 'Tap a region'
-              : `${legal?.length ?? 0} colour${legal?.length === 1 ? '' : 's'} left here`}
+              ? level.kind === 'tables'
+                ? 'Tap a guest'
+                : 'Tap a region'
+              : level.kind === 'tables'
+                ? `${legal?.length ?? 0} table${legal?.length === 1 ? '' : 's'} left for them`
+                : `${legal?.length ?? 0} colour${legal?.length === 1 ? '' : 's'} left here`}
           </p>
 
           <div className="controls">
@@ -369,13 +398,27 @@ export default function Level({
 
       <p className="foot">
         {board.solved ? (
-          <strong className="ok">Done — nothing touching shares a colour.</strong>
+          <strong className="ok">
+            {level.kind === 'tables'
+              ? 'Seated — nobody is sitting with a rival.'
+              : 'Done — nothing touching shares a colour.'}
+          </strong>
         ) : board.dead.length > 0 ? (
-          <strong className="bad">A region has no colours left. Undo and try another.</strong>
+          <strong className="bad">
+            {level.kind === 'tables'
+              ? 'Someone has nowhere left to sit. Undo and try another.'
+              : 'A region has no colours left. Undo and try another.'}
+          </strong>
         ) : board.noneForced ? (
-          <strong className="mrv">Nothing is forced now — take the region with the fewest colours left.</strong>
+          <strong className="mrv">
+            {level.kind === 'tables'
+              ? 'Nothing is forced now — seat the guest with the fewest tables left.'
+              : 'Nothing is forced now — take the region with the fewest colours left.'}
+          </strong>
         ) : (
-          'Press and hold a region to see what it touches.'
+          level.kind === 'tables'
+            ? 'Press and hold a guest to see who they argue with.'
+            : 'Press and hold a region to see what it touches.'
         )}
       </p>
     </div>

@@ -156,8 +156,8 @@ console.log('l3: 14 towers, ' + edges + ' overlaps, propagation places ' + g.pr.
 
 const L3 = { id: 'l3', title: 'Level 3 · No map at all',
   rule: 'Rivals can\u2019t share a table.',
-  note: 'Each colour is a table. Nothing here is decided for you.',
-  kind: 'graph', k: 3, nodes: pos, adj: g.adj, given: g.given, solution: g.sol,
+  note: 'Nothing here is decided for you.',
+  kind: 'tables', k: 3, nodes: pos, adj: g.adj, given: g.given, solution: g.sol,
   view: frame(pos, 34),
   stats: { regions: 14, waves: g.pr.waves, forced: g.pr.placed, choices: g.pr.left } };
 
@@ -185,7 +185,7 @@ const header = [
   '  title: string;',
   '  rule: string;',
   '  note: string;',
-  '  kind: \'hex\' | \'graph\';',
+  '  kind: \'hex\' | \'graph\' | \'tables\';',
   '  k: number;',
   '  nodes: { x: number; y: number; poly?: string }[];',
   '  adj: number[][];',

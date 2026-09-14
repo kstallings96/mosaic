@@ -103,9 +103,13 @@ export function useColourBoard(level: ColourLevel, sessionId: string, onSolved: 
     [level, sessionId, onSolved],
   );
 
+  // The same model drives a map and a dinner party, so the few sentences
+  // the student actually reads follow the level rather than the code.
+  const seating = level.kind === 'tables';
+
   function select(region: number) {
     if (isGiven(level, region)) {
-      say('This one was filled in to start. It cannot change.');
+      say(seating ? 'They were seated before you arrived.' : 'This one was filled in to start. It cannot change.');
       return;
     }
     const next = selected === region ? null : region;
@@ -137,7 +141,7 @@ export function useColourBoard(level: ColourLevel, sessionId: string, onSolved: 
     const clash = blockedBy(level, current, region, colour);
     if (clash.length > 0) {
       blockedAttempts.current += 1;
-      say(`A region it touches is already that colour.`);
+      say(seating ? 'A rival of theirs is already at that table.' : 'A region it touches is already that colour.');
       logEvent(sessionId, 'colour_blocked', { level: level.id, region, colour, blockedBy: clash });
       return;
     }
