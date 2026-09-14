@@ -214,21 +214,25 @@
 
 .region.dim polygon,
 .region.dim circle {
-  opacity: 0.28;
+  opacity: 0.22;
 }
 
-/* Held down: the regions this one touches. That is the entire rule. */
+/* Held down: the regions this one touches. That is the entire rule.
+   Emphasis is stroke plus an outward glow, never a filter on the fill:
+   brightness() clips the red and green channels, which turned the orange
+   into a yellow and made a region look like a colour it was not. */
 .region.nb polygon,
 .region.nb circle {
-  filter: brightness(1.4);
-  stroke: var(--ink);
-  stroke-width: 4;
+  stroke: rgba(255, 255, 255, 0.92);
+  stroke-width: 3.5;
+  filter: drop-shadow(0 0 7px rgba(255, 255, 255, 0.4));
 }
 
 .region.sel polygon,
 .region.sel circle {
   stroke: #fff;
-  stroke-width: 4;
+  stroke-width: 5;
+  filter: drop-shadow(0 0 9px rgba(255, 255, 255, 0.55));
 }
 
 /* Pre-coloured: the regions that break the interchangeable-colour symmetry. */
@@ -242,11 +246,21 @@
   cursor: default;
 }
 
-/* Only shown once the forced moves run out. */
+/* Only shown once the forced moves run out. Told apart by weight and
+   motion rather than a hue, because any hue here is one of the three the
+   student is choosing between and would read as an answer. */
 .region.tightest polygon,
 .region.tightest circle {
-  stroke: var(--mrv);
+  stroke: #fff;
   stroke-width: 5;
+  stroke-dasharray: 11 7;
+  animation: tightest-crawl 3.2s linear infinite;
+}
+
+@keyframes tightest-crawl {
+  to {
+    stroke-dashoffset: -36;
+  }
 }
 
 .region.spotlight polygon,
@@ -565,7 +579,7 @@
 
 .foot .ok { color: var(--ok); }
 .foot .bad { color: var(--bad); }
-.foot .mrv { color: var(--mrv); }
+.foot .mrv { color: var(--ink); font-weight: 700; }
 
 /* ---------- how to play ---------- */
 

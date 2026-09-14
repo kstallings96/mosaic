@@ -359,9 +359,9 @@ export const LEVELS: ColourLevel[] = [
   },
   {
     "id": "l3",
-    "title": "Level 3 · It was never a map",
-    "rule": "Towers whose signals overlap can’t share a channel.",
-    "note": "Nothing is forced at the start. Find the tower with the fewest channels left and begin there.",
+    "title": "Level 3 · No map at all",
+    "rule": "Rivals can’t share a table.",
+    "note": "Each colour is a table. Nothing here is decided for you.",
     "kind": "graph",
     "k": 3,
     "nodes": [
@@ -553,5 +553,5 @@ export const LEVELS: ColourLevel[] = [
   }
 ];
 
-export const COLOURS = ['#5ed3e8', '#ffc46b', '#f79ad3'];
-export const COLOUR_NAMES = ['Teal', 'Amber', 'Rose'];
+export const COLOURS = ['#5ed3e8', '#ff9d5c', '#f79ad3'];
+export const COLOUR_NAMES = ['Teal', 'Orange', 'Rose'];

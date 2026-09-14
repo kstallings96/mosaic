@@ -15,14 +15,18 @@
   --line: #3a3358;
   --empty: rgba(255, 255, 255, 0.055);
 
-  /* The three. Deliberately far apart in hue, and far from red and green. */
+  /* The three. Deliberately far apart in hue, and far from red and green.
+     Keep these in step with COLOURS in src/data/levels.ts.
+
+     The middle one used to be a pale amber, close enough to yellow that it
+     read as yellow at rest and turned into it outright under any lift. A
+     truer orange survives being highlighted and stays clearly itself. */
   --c1: #5ed3e8;
-  --c2: #ffc46b;
+  --c2: #ff9d5c;
   --c3: #f79ad3;
 
   --ok: #8fe07a;
   --bad: #ff7a8a;
-  --mrv: #ffc46b;
 
   --ink: #f4f0ff;
   --dim: #c2b8dc;

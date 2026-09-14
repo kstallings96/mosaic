@@ -34,12 +34,11 @@ const HOW_TO: Record<string, { story: string; steps: string[] }> = {
     ],
   },
   l3: {
-    story: 'These are not regions any more. They are radio towers, and two towers whose signals overlap cannot share a channel.',
+    story: 'Same rule, no map. A line between two guests means they argue.',
     steps: [
-      'A line between two towers means their signals overlap.',
-      'Nothing is decided for you at the start this time.',
-      'Start with the tower that has the fewest channels left.',
-      'Same rule as the maps. Only the picture changed.',
+      'Each colour is a table.',
+      'A line means those two argue, so they cannot share one.',
+      'Nothing is forced here. Start with the guest who has the fewest tables left.',
     ],
   },
 };
@@ -70,6 +69,14 @@ export default function Level({
   const [secondsLeft, setSecondsLeft] = useState(FREE_PLAY_SECONDS);
   const [assistUnlocked, setAssistUnlocked] = useState(false);
   const [reasons, setReasons] = useState<string[]>([]);
+  /**
+   * The most-constrained ring answers a question; it is not ambient state.
+   * Shown whenever nothing was forced, it marked every tied region at once
+   * — on the last level that is most of the board, from the first second —
+   * which is noise, and it hands over the one judgement the student is
+   * there to make. It appears when they ask, and clears on the next move.
+   */
+  const [showTightest, setShowTightest] = useState(false);
   const [walk, setWalk] = useState<Step | null>(null);
   const walkRef = useRef<Step | null>(null);
   const unlockLogged = useRef(false);
@@ -116,6 +123,7 @@ export default function Level({
 
   function handleTightest() {
     board.countHint();
+    setShowTightest(true);
     const ids = board.tightest;
     if (ids.length === 0) return;
     const n = domain(level, board.boardRef.current, ids[0]).length;
@@ -203,6 +211,13 @@ export default function Level({
     logEvent(sessionId, 'walkthrough_stopped', { level: level.id });
   }
 
+  // Any change to the board answers the question that was asked, so the
+  // ring goes away rather than lingering over a stale answer.
+  const placedCount = Object.keys(board.board).length;
+  useEffect(() => {
+    setShowTightest(false);
+  }, [placedCount]);
+
   const legal = board.selected === null ? null : domain(level, board.board, board.selected);
   const locked = walk !== null;
   const how = HOW_TO[level.id];
@@ -242,7 +257,7 @@ export default function Level({
           selected={board.selected}
           peeking={peeking}
           tightest={board.tightest}
-          showTightest={board.noneForced}
+          showTightest={showTightest}
           spotlight={walk?.phase === 'considering' ? walk.region : null}
           onSelect={board.select}
           onPeek={setPeeking}

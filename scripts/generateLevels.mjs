@@ -154,9 +154,9 @@ const edges = g.adj.reduce((a, b) => a + b.length, 0) / 2;
 console.log('l3: 14 towers, ' + edges + ' overlaps, propagation places ' + g.pr.placed +
   ' in ' + g.pr.waves + ' waves, stalls with ' + g.pr.left);
 
-const L3 = { id: 'l3', title: 'Level 3 · It was never a map',
-  rule: 'Towers whose signals overlap can\u2019t share a channel.',
-  note: 'Nothing is forced at the start. Find the tower with the fewest channels left and begin there.',
+const L3 = { id: 'l3', title: 'Level 3 · No map at all',
+  rule: 'Rivals can\u2019t share a table.',
+  note: 'Each colour is a table. Nothing here is decided for you.',
   kind: 'graph', k: 3, nodes: pos, adj: g.adj, given: g.given, solution: g.sol,
   view: frame(pos, 34),
   stats: { regions: 14, waves: g.pr.waves, forced: g.pr.placed, choices: g.pr.left } };
@@ -201,7 +201,7 @@ const header = [
 writeFileSync(OUT,
   header +
   'export const LEVELS: ColourLevel[] = ' + JSON.stringify([L1, L2, L3], null, 2) + ';\n\n' +
-  'export const COLOURS = [\'#5ed3e8\', \'#ffc46b\', \'#f79ad3\'];\n' +
-  'export const COLOUR_NAMES = [\'Teal\', \'Amber\', \'Rose\'];\n');
+  'export const COLOURS = [\'#5ed3e8\', \'#ff9d5c\', \'#f79ad3\'];\n' +
+  'export const COLOUR_NAMES = [\'Teal\', \'Orange\', \'Rose\'];\n');
 
 console.log('\nwrote ' + OUT);
