@@ -32,6 +32,7 @@ export type EventType =
   // trying to measure. Nothing emits it, so it is not declared.
   | 'hint_most_constrained'
   | 'hint_walkthrough_start'
+  | 'assist_cleared_blocker'
   | 'walkthrough_step'
   | 'walkthrough_stopped'
   | 'assist_unlocked'

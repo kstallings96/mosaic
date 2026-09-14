@@ -187,6 +187,26 @@ export function prunedBy(level: ColourLevel, before: Board, after: Board): numbe
   return removed;
 }
 
+/**
+ * Moves that have made the board unfinishable.
+ *
+ * Because each level has exactly one solution, any placement that differs
+ * from it kills the board — and it does so silently. A wrong colour leaves
+ * every neighbour with options, so no region shows a zero and nothing looks
+ * broken; the board is simply no longer completable. A student cannot see
+ * that, which is why the helper has to be able to find it and take those
+ * moves back out. Pre-coloured regions are never blockers.
+ */
+export function blockingRegions(level: ColourLevel, board: Board): number[] {
+  const out: number[] = [];
+  for (const key of Object.keys(board)) {
+    const i = Number(key);
+    if (isGiven(level, i)) continue;
+    if (board[i] !== level.solution[i]) out.push(i);
+  }
+  return out;
+}
+
 /** Neighbours that already hold this colour — used to name a refused drop. */
 export function blockedBy(level: ColourLevel, board: Board, region: number, colour: number): number[] {
   return level.adj[region].filter((n) => board[n] === colour);

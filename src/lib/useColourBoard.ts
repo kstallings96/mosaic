@@ -154,6 +154,22 @@ export function useColourBoard(level: ColourLevel, sessionId: string, onSolved: 
     });
   }
 
+  /**
+   * Takes several placements back out at once. The helper needs this to
+   * recover a board that can no longer be finished; a student would have to
+   * undo blindly, because nothing on screen shows which move was the wrong
+   * one.
+   */
+  function clearRegions(ids: number[]) {
+    if (ids.length === 0) return;
+    const current = boardRef.current;
+    const next = { ...current };
+    for (const i of ids) delete next[i];
+    apply(next, current);
+    setSelected(null);
+    logEvent(sessionId, 'assist_cleared_blocker', { level: level.id, regions: ids });
+  }
+
   /** Used by the helper, which has already checked the move is legal. */
   function applyDirect(region: number, colour: number) {
     const current = boardRef.current;
@@ -202,6 +218,7 @@ export function useColourBoard(level: ColourLevel, sessionId: string, onSolved: 
     select,
     paint,
     applyDirect,
+    clearRegions,
     undo,
     reset,
     say,

@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { COLOURS, COLOUR_NAMES } from '../data/levels';
 import type { ColourLevel } from '../data/levels';
-import { domain, effectOf, mostConstrained, suggest } from '../lib/colouring';
+import { blockingRegions, domain, effectOf, mostConstrained, suggest } from '../lib/colouring';
 import { logEvent } from '../lib/logger';
 import { useColourBoard } from '../lib/useColourBoard';
 import { useScreenTiming } from '../lib/useScreenTiming';
@@ -170,10 +170,12 @@ export default function Level({
     if (ids.length === 0) return;
     const n = domain(level, board.boardRef.current, ids[0]).length;
     logEvent(sessionId, 'hint_most_constrained', { level: level.id, regions: ids, optionsLeft: n });
+    const thing = level.words.thing;
+    const slot = level.words.slot;
     addReason(
       ids.length === 1
-        ? `The outlined region has the fewest colours left: ${n}.`
-        : `${ids.length} regions are tied for the fewest colours left, with ${n} each.`,
+        ? `The outlined ${thing} has the fewest ${slot}s left: ${n}.`
+        : `${ids.length} ${thing}s are tied for the fewest ${slot}s left, with ${n} each.`,
     );
   }
 
@@ -182,17 +184,50 @@ export default function Level({
   function startWalkthrough(auto: boolean) {
     if (walkRef.current) return;
     board.countHint();
-    const total = level.nodes.length - Object.keys(board.boardRef.current).length;
-    logEvent(sessionId, 'hint_walkthrough_start', { level: level.id, remaining: total, auto });
+    // Counted after any unsticking, so the step count does not promise
+    // fewer steps than it is about to take.
+    const stuck = blockingRegions(level, board.boardRef.current).length;
+    const total = level.nodes.length - Object.keys(board.boardRef.current).length + stuck;
+    logEvent(sessionId, 'hint_walkthrough_start', { level: level.id, remaining: total, blocked: stuck, auto });
     if (auto) void autoPlay(0, total);
     else consider(0, total);
   }
 
+  /**
+   * Clears whatever has made the board unfinishable, and says so.
+   *
+   * Every level has one solution, so a legal-looking colour that is not the
+   * right one kills the board without leaving a mark: no region shows a
+   * zero, nothing looks broken, and the helper simply cannot find a move.
+   * It used to give up at that point and do nothing at all, which read as a
+   * broken button. It also meant the four-minute hard cap could not deliver
+   * the solved board it exists to guarantee. Now it backs the blocking
+   * moves out, names what it did, and carries on.
+   */
+  function unstick(): boolean {
+    const blockers = blockingRegions(level, board.boardRef.current);
+    if (blockers.length === 0) return false;
+    board.clearRegions(blockers);
+    const thing = level.words.thing;
+    addReason(
+      `I could not finish from there. ${blockers.length} ${thing}${blockers.length === 1 ? '' : 's'} had a ` +
+        `${level.words.slot} that leaves no way to fill in the rest, so I took ` +
+        `${blockers.length === 1 ? 'it' : 'them'} back out. Nothing was wrong with the rule — it just ` +
+        `closed off every ending.`,
+    );
+    return true;
+  }
+
   function consider(index: number, total: number) {
-    const move = suggest(level, board.boardRef.current);
+    let move = suggest(level, board.boardRef.current);
+    if (!move && unstick()) move = suggest(level, board.boardRef.current);
     if (!move) {
       setWalk(null);
       walkRef.current = null;
+      // Only silence left is a finished board; anything else gets said.
+      if (!board.solved) {
+        addReason('I cannot find a move from here. Try Undo, then ask me again.');
+      }
       return;
     }
     const thing = level.words.thing;
@@ -237,7 +272,8 @@ export default function Level({
   }
 
   async function autoPlay(index: number, total: number) {
-    const move = suggest(level, board.boardRef.current);
+    let move = suggest(level, board.boardRef.current);
+    if (!move && unstick()) move = suggest(level, board.boardRef.current);
     if (!move) {
       setWalk(null);
       walkRef.current = null;
@@ -372,7 +408,7 @@ export default function Level({
               {!walk && (
                 <div className="assist-buttons">
                   <button type="button" className="assist-button" onClick={handleTightest}>
-                    Which one is stuck the most?
+                    Which has the fewest choices left?
                   </button>
                   <button type="button" className="assist-button" onClick={() => startWalkthrough(false)}>
                     Show me how you would do it
