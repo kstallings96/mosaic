@@ -7,6 +7,7 @@ import { useColourBoard } from '../lib/useColourBoard';
 import { useScreenTiming } from '../lib/useScreenTiming';
 import Board from './Board';
 import HowToPlay from './HowToPlay';
+import AnimalHead, { animalName } from './animals';
 import Helper from './Helper';
 import type { ChatMessage, Mood } from './Helper';
 
@@ -36,15 +37,32 @@ const HOW_TO: Record<string, { story: string; steps: string[] }> = {
     ],
   },
   l3: {
-    story: 'Same rule, no map. A line between two animals means those two fight.',
+    story: 'Loading day at the zoo. Every crate takes one animal, and a line between two crates means they ride side by side.',
     steps: [
-      'Each color is a zone of the zoo.',
-      'Two animals joined by a line cannot go in the same zone.',
-      'Nothing is decided for you here. Start with the animal that has the fewest zones left.',
+      'Three animals: elephant, lion, giraffe. Each one is a color.',
+      'Two crates joined by a line cannot hold the same animal — they would go at each other the whole way.',
+      'Nothing is decided for you here. Start with the crate that has the fewest animals left.',
     ],
   },
 };
 
+
+/**
+ * What to call one of the three choices.
+ *
+ * On the last level they are animals rather than colours, and an animal
+ * takes an article where a colour does not: teal, but the lion.
+ */
+function slotWord(level: ColourLevel, v: number): string {
+  return level.icons === 'animals'
+    ? `the ${animalName(v).toLowerCase()}`
+    : COLOUR_NAMES[v].toLowerCase();
+}
+
+/** 'a crate', but 'an animal'. */
+function article(word: string): string {
+  return /^[aeiou]/i.test(word) ? 'an' : 'a';
+}
 
 /**
  * What the move just did, in a sentence a student will actually read.
@@ -59,7 +77,7 @@ function describeResult(
   effect: { narrowed: number[]; nowForced: number[]; nowDead: number[] },
 ): string {
   const slot = level.words.slot;
-  const name = COLOUR_NAMES[colour].toLowerCase();
+  const name = slotWord(level, colour);
 
   if (effect.nowDead.length > 0) {
     return `Uh oh. Now something has no ${slot}s left at all.`;
@@ -396,9 +414,17 @@ export default function Level({
                   // and it is the only way an attempted illegal move can
                   // be logged at all.
                   disabled={idle || locked}
-                  aria-label={COLOUR_NAMES[v]}
+                  aria-label={level.icons === 'animals' ? animalName(v) : COLOUR_NAMES[v]}
                 >
-                  <span className="swatch-face" />
+                  {/* The swatch carries the animal too, so the colour and
+                      the animal are learned as one fact rather than two. */}
+                  <span className="swatch-face">
+                    {level.icons === 'animals' && (
+                      <span className="animal-wrap">
+                        <AnimalHead index={v} size={26} />
+                      </span>
+                    )}
+                  </span>
                 </button>
               );
             })}
@@ -406,7 +432,7 @@ export default function Level({
 
           <p className="palette-hint">
             {board.selected === null
-              ? `Tap a${/^[aeiou]/i.test(level.words.thing) ? 'n' : ''} ${level.words.thing}`
+              ? `Tap ${article(level.words.thing)} ${level.words.thing}`
               : `${legal?.length ?? 0} ${level.words.slot}${legal?.length === 1 ? '' : 's'} left here`}
           </p>
 
@@ -461,7 +487,8 @@ export default function Level({
       <p className="foot">
         {board.solved ? (
           <strong className="ok">
-            That’s it — nothing that touches shares a {level.words.slot}.
+            That’s it — nothing that touches shares {article(level.words.slot)}{' '}
+            {level.words.slot}.
           </strong>
         ) : board.dead.length > 0 ? (
           <strong className="bad">

@@ -206,14 +206,26 @@
 }
 
 .region polygon,
-.region circle {
+.region circle,
+.region .crate {
   stroke: var(--ink-bg);
   stroke-width: 3;
   transition: opacity 0.18s, filter 0.18s;
 }
 
+/* An empty crate is nearly transparent, so its edge is the only thing
+   saying a crate is there at all. Declared before the emphasis rules
+   below, which are meant to override it. */
+.region .crate.on-empty {
+  stroke: rgba(194, 184, 220, 0.5);
+  stroke-width: 2.5;
+}
+
 .region.dim polygon,
-.region.dim circle {
+.region.dim circle,
+.region.dim .crate,
+.region.dim .slats,
+.region.dim .animal-wrap {
   opacity: 0.22;
 }
 
@@ -222,14 +234,16 @@
    brightness() clips the red and green channels, which turned the orange
    into a yellow and made a region look like a colour it was not. */
 .region.nb polygon,
-.region.nb circle {
+.region.nb circle,
+.region.nb .crate {
   stroke: rgba(255, 255, 255, 0.92);
   stroke-width: 3.5;
   filter: drop-shadow(0 0 7px rgba(255, 255, 255, 0.4));
 }
 
 .region.sel polygon,
-.region.sel circle {
+.region.sel circle,
+.region.sel .crate {
   stroke: #fff;
   stroke-width: 5;
   filter: drop-shadow(0 0 9px rgba(255, 255, 255, 0.55));
@@ -250,7 +264,8 @@
    motion rather than a hue, because any hue here is one of the three the
    student is choosing between and would read as an answer. */
 .region.tightest polygon,
-.region.tightest circle {
+.region.tightest circle,
+.region.tightest .crate {
   stroke: #fff;
   stroke-width: 5;
   stroke-dasharray: 11 7;
@@ -268,7 +283,8 @@
    crawling one on the most-constrained marker — three dashed outlines
    meaning three different things is not a language anyone can read. */
 .region.spotlight polygon,
-.region.spotlight circle {
+.region.spotlight circle,
+.region.spotlight .crate {
   stroke: #fff;
   stroke-width: 5;
   stroke-dasharray: none;
@@ -401,6 +417,14 @@
   height: 36px;
   border-radius: 11px;
   background: var(--c);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.swatch .animal-wrap {
+  display: flex;
+  line-height: 0;
 }
 
 .swatch:not(:disabled) {
@@ -834,36 +858,37 @@
   text-align: center;
 }
 
-/* ---------- the animals (level 3) ---------- */
+/* ---------- crates and animals (level 3) ---------- */
 
-/* Shape carries identity, colour carries the zone. The ink flips so a head
-   stays readable whether its node is empty or filled. */
+/* Planks, so an empty crate reads as a container rather than a square. */
+.slats rect { fill: var(--dim); fill-opacity: 0.32; }
+.slats.on-filled rect { fill: var(--ink-bg); fill-opacity: 0.3; }
+
+/* The animal says which of the three a crate holds, exactly as the colour
+   does. Saying it twice is the point: it survives a projector, a cheap
+   Chromebook panel, and a student who cannot tell the teal from the pink. */
 .animal-wrap { pointer-events: none; }
 
 /* The shapes carry no fill of their own, so they inherit this one. Without
    it they fall back to the SVG default of solid black and vanish against a
    dark node. `.animal-eye` sets its own fill, so it still wins. */
 .animal { fill: currentColor; }
-.animal-wrap.on-empty .animal { color: var(--dim); }
-.animal-wrap.on-filled .animal { color: #16121f; }
+.animal-wrap .animal { color: #16121f; }
 
-.animal-eye { fill: var(--ink-bg); }
-.animal-wrap.on-filled .animal-eye { fill: rgba(255, 255, 255, 0.82); }
+.animal-eye { fill: rgba(255, 255, 255, 0.82); }
 
-/* Interior detail - manes, muzzles, stripes, facial discs. Drawn in the
+/* Interior detail - ear hollows, a muzzle, a giraffe's spots. Drawn in a
    contrasting ink rather than the body ink at low opacity: same-colour
    shapes stacked on a solid silhouette are invisible, which is how the
-   lion lost its mane and the zebra lost its stripes. */
-.animal-cut { fill: var(--ink-bg); fill-opacity: 0.5; }
-.animal-wrap.on-filled .animal-cut { fill: #fff; fill-opacity: 0.4; }
+   lion lost its mane the first time round. */
+.animal-cut { fill: #fff; fill-opacity: 0.4; }
 
-/* A cut that has to survive on its own - stripes, spots, a face patch -
-   rather than just soften an edge. */
-.animal-cut.deep { fill-opacity: 0.8; }
-.animal-wrap.on-filled .animal-cut.deep { fill-opacity: 0.66; }
+/* A cut that has to carry the identity on its own rather than just soften
+   an edge. */
+.animal-cut.deep { fill-opacity: 0.66; }
 
-/* The counter moved off the animal's face to the node's shoulder, so it
-   needs its own disc to stay legible against whatever is behind it. */
+/* The counter moved off the crate to its top corner, so it needs its own
+   disc to stay legible against whatever is behind it. */
 .region .w {
   background: var(--ink-bg);
   border-radius: 50%;

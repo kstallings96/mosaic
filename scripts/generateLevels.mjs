@@ -256,14 +256,14 @@ if (!g) throw new Error('no level 3 graph found');
 const drawing = bestLayout(g.adj);
 if (!drawing) throw new Error('no readable layout found');
 const pos = drawing.pos;
-console.log('l3: ' + g.n + ' animals, ' + g.edges + ' feuds, ' +
+console.log('l3: ' + g.n + ' crates, ' + g.edges + ' touching pairs, ' +
   drawing.c + ' line crossings (best of 160 layouts), propagation places ' +
   g.pr.placed + ' in ' + g.pr.waves + ' waves, stalls with ' + g.pr.left);
 
 const L3 = { id: 'l3', title: 'Level 3 · The Zoo',
-  rule: 'Animals that fight can\u2019t share a zone.',
-  note: 'Three zones, eleven animals, and nothing here is decided for you.',
-  words: { thing: 'animal', slot: 'zone' },
+  rule: 'Crates that touch can\u2019t hold the same animal.',
+  note: 'Eleven crates, three animals, and nothing here is decided for you.',
+  words: { thing: 'crate', slot: 'animal' },
   icons: 'animals',
   kind: 'graph', k: 3, nodes: pos, adj: g.adj, given: g.given, solution: g.sol,
   view: frame(pos, 34),

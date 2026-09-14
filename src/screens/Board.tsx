@@ -37,8 +37,12 @@ export default function Board({
   onSelect: (region: number) => void;
   onPeek: (region: number | null) => void;
 }) {
-  // Animal heads need a bigger disc to sit in than a bare dot does.
-  const NODE_R = level.icons === 'animals' ? 34 : 30;
+  // On the last level a node is a crate, not a dot: a square that can
+  // hold something, because on that level it does. Half-side rather than
+  // radius, so the crate covers about the same ground as the disc did.
+  const CRATE = level.icons === 'animals';
+  const NODE_R = 30;
+  const HALF = 35;
 
   const { cascade, cascadeKey } = useCascade(domains);
   const focus = peeking ?? selected;
@@ -50,7 +54,7 @@ export default function Board({
         className="board"
         viewBox={`${level.view.minX} ${level.view.minY} ${level.view.w} ${level.view.h}`}
         role="group"
-        aria-label={`${level.nodes.length} regions`}
+        aria-label={`${level.nodes.length} ${level.words.thing}s`}
       >
         {/* A map shows its adjacency by touching. A graph has to draw it. */}
         {level.kind === 'graph' &&
@@ -103,7 +107,11 @@ export default function Board({
               onPointerCancel={() => onPeek(null)}
               onPointerLeave={() => onPeek(null)}
             >
-              {level.icons === 'animals' && <title>{animalName(i)}</title>}
+              {CRATE && (
+                <title>
+                  {`Crate ${i + 1}${colour === undefined ? '' : `, ${animalName(colour)}`}`}
+                </title>
+              )}
               {level.kind === 'hex' ? (
                 <>
                   <polygon
@@ -111,6 +119,57 @@ export default function Board({
                     fill={colour === undefined ? 'var(--empty)' : COLOURS[colour]}
                   />
                   {locked && <polygon className="pin" points={node.poly} fill="none" />}
+                </>
+              ) : CRATE ? (
+                <>
+                  <rect
+                    className={`crate${colour === undefined ? ' on-empty' : ''}`}
+                    x={node.x - HALF}
+                    y={node.y - HALF}
+                    width={HALF * 2}
+                    height={HALF * 2}
+                    rx={6}
+                    fill={colour === undefined ? 'var(--empty)' : COLOURS[colour]}
+                  />
+                  {/* Two planks. Without them an empty crate is a square,
+                      and a square is not a thing you put an animal in. */}
+                  <g className={`slats${colour === undefined ? ' on-empty' : ' on-filled'}`}>
+                    <rect
+                      x={node.x - HALF + 5}
+                      y={node.y - HALF + 9}
+                      width={HALF * 2 - 10}
+                      height={3.2}
+                      rx={1.6}
+                    />
+                    <rect
+                      x={node.x - HALF + 5}
+                      y={node.y + HALF - 11.8}
+                      width={HALF * 2 - 10}
+                      height={3.2}
+                      rx={1.6}
+                    />
+                  </g>
+                  {locked && (
+                    <rect
+                      className="pin"
+                      x={node.x - HALF}
+                      y={node.y - HALF}
+                      width={HALF * 2}
+                      height={HALF * 2}
+                      rx={6}
+                      fill="none"
+                    />
+                  )}
+                  {/* Only a filled crate holds an animal. An empty one is
+                      the question; the animal is the answer. */}
+                  {colour !== undefined && (
+                    <g
+                      className="animal-wrap"
+                      transform={`translate(${node.x - 23} ${node.y - 23})`}
+                    >
+                      <AnimalHead index={colour} size={46} />
+                    </g>
+                  )}
                 </>
               ) : (
                 <>
@@ -121,21 +180,13 @@ export default function Board({
                     fill={colour === undefined ? 'var(--empty)' : COLOURS[colour]}
                   />
                   {locked && <circle className="pin" cx={node.x} cy={node.y} r={NODE_R} fill="none" />}
-                  {level.icons === 'animals' && (
-                    <g
-                      className={`animal-wrap${colour === undefined ? ' on-empty' : ' on-filled'}`}
-                      transform={`translate(${node.x - 21} ${node.y - 21})`}
-                    >
-                      <AnimalHead index={i} size={42} />
-                    </g>
-                  )}
                 </>
               )}
 
               {n !== undefined && (
                 <foreignObject
-                  x={level.icons === 'animals' ? node.x + 11 : node.x - 17}
-                  y={level.icons === 'animals' ? node.y - 38 : node.y - 17}
+                  x={CRATE ? node.x + 19 : node.x - 17}
+                  y={CRATE ? node.y - 46 : node.y - 17}
                   width={34}
                   height={34}
                 >
