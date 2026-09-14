@@ -263,10 +263,17 @@
   }
 }
 
+/* What the helper is talking about right now. Solid and glowing, so it is
+   never confused with the dashed ring on a pre-filled region or the
+   crawling one on the most-constrained marker — three dashed outlines
+   meaning three different things is not a language anyone can read. */
 .region.spotlight polygon,
 .region.spotlight circle {
   stroke: #fff;
   stroke-width: 5;
+  stroke-dasharray: none;
+  animation: none;
+  filter: drop-shadow(0 0 11px rgba(255, 255, 255, 0.65));
 }
 
 .region foreignObject {
@@ -457,46 +464,14 @@
   cursor: default;
 }
 
-/* ---------- helper ---------- */
-
-.assist {
-  border: 1px solid var(--c1);
-  border-radius: 13px;
-  background: linear-gradient(180deg, var(--panel-2), var(--panel));
-  padding: 13px 14px;
-  animation: assist-in 0.3s ease-out;
-}
 
 @keyframes assist-in {
   from { opacity: 0; transform: translateY(6px); }
   to { opacity: 1; transform: none; }
 }
 
-.assist-badge {
-  display: inline-flex;
-  align-items: center;
-  gap: 7px;
-  font-family: var(--display);
-  font-size: 11.5px;
-  font-weight: 600;
-  letter-spacing: 0.16em;
-  color: var(--c1);
-  margin-bottom: 10px;
-}
 
-.assist-badge .dot {
-  width: 7px;
-  height: 7px;
-  border-radius: 50%;
-  background: var(--c1);
-  box-shadow: 0 0 9px var(--c1);
-}
 
-.assist-buttons {
-  display: flex;
-  flex-direction: column;
-  gap: 7px;
-}
 
 .assist-button {
   width: 100%;
@@ -537,37 +512,9 @@
   margin-bottom: 6px;
 }
 
-.walk-reason {
-  font-size: 14.5px;
-  color: var(--ink);
-  margin-bottom: 10px;
-  line-height: 1.45;
-}
 
-/* Reasons stack rather than replace each other: seeing two explanations
-   with the same shape at once is where the structure becomes visible. */
-.reasons {
-  list-style: none;
-  margin: 12px 0 0;
-  padding: 11px 0 0;
-  border-top: 1px solid var(--line);
-  display: flex;
-  flex-direction: column;
-  gap: 9px;
-}
 
-.reasons li {
-  font-size: 13.5px;
-  line-height: 1.45;
-  color: var(--faint);
-  padding-left: 11px;
-  border-left: 2px solid var(--line);
-}
 
-.reasons li.newest {
-  color: var(--dim);
-  border-left-color: var(--c1);
-}
 
 /* ---------- foot ---------- */
 
@@ -714,13 +661,175 @@
 }
 
 
-/* The consequence half of a walkthrough step. Set apart from the reason
-   above it, because the pair is the point: this is what that did. */
-.walk-result {
-  font-size: 14.5px;
-  line-height: 1.5;
-  color: var(--dim);
-  margin: 0 0 12px;
-  padding-left: 11px;
-  border-left: 2px solid var(--c1);
+
+/* =====================================================================
+   the helper
+   ===================================================================== */
+
+.helper {
+  border: 1px solid var(--c1);
+  border-radius: 14px;
+  background: linear-gradient(180deg, var(--panel-2), var(--panel));
+  padding: 12px 12px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  animation: assist-in 0.3s ease-out;
+}
+
+@keyframes assist-in {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: none; }
+}
+
+.helper-head {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+}
+
+.helper-who {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.25;
+}
+
+.helper-name {
+  font-family: var(--display);
+  font-weight: 600;
+  font-size: 15px;
+  letter-spacing: 0.1em;
+  color: var(--ink);
+}
+
+.helper-role {
+  font-size: 12.5px;
+  color: var(--faint);
+}
+
+/* ---------- the robot ---------- */
+
+.bot { flex: none; }
+
+.bot-shell {
+  fill: #eae6f7;
+  stroke: rgba(0, 0, 0, 0.18);
+  stroke-width: 1;
+}
+
+.bot-eye { fill: #241f36; }
+
+/* The core is the only part that carries state, so the student reads how
+   the helper is doing without a word being spent saying it. */
+.bot-core {
+  fill: var(--c1);
+  transition: fill 0.3s;
+}
+
+.bot-idle .bot-core { animation: bot-breathe 3.4s ease-in-out infinite; }
+.bot-thinking .bot-core { fill: var(--c2); animation: bot-breathe 0.9s ease-in-out infinite; }
+.bot-pleased .bot-core { fill: var(--ok); }
+.bot-concerned .bot-core { fill: var(--bad); animation: bot-breathe 1.4s ease-in-out infinite; }
+
+@keyframes bot-breathe {
+  0%, 100% { opacity: 0.55; }
+  50% { opacity: 1; }
+}
+
+.bot-arm { transform-origin: 50% 20%; }
+.bot-thinking .bot-arm-r { animation: bot-wave 0.9s ease-in-out infinite; }
+
+@keyframes bot-wave {
+  0%, 100% { transform: rotate(0deg); }
+  50% { transform: rotate(-12deg); }
+}
+
+/* ---------- the conversation ---------- */
+
+.chat {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  max-height: 34svh;
+  overflow-y: auto;
+  padding-right: 2px;
+}
+
+.chat-empty {
+  font-size: 13.5px;
+  color: var(--faint);
+  padding: 4px 2px;
+}
+
+/* Each turn is a button because each turn can point: tapping one lights
+   the pieces it is about, so an explanation that did not land can be
+   recovered instead of scrolling away. */
+.bubble {
+  min-height: 0;
+  text-align: left;
+  font: 14px/1.45 var(--sans);
+  color: var(--ink);
+  background: rgba(255, 255, 255, 0.07);
+  border: 1px solid transparent;
+  border-radius: 12px 12px 12px 4px;
+  padding: 9px 11px;
+  cursor: default;
+  animation: bubble-in 0.22s ease-out;
+}
+
+@keyframes bubble-in {
+  from { opacity: 0; transform: translateY(4px); }
+  to { opacity: 1; transform: none; }
+}
+
+.bubble.points { cursor: pointer; }
+.bubble.points:hover { background: rgba(255, 255, 255, 0.11); }
+
+.bubble.active {
+  border-color: var(--c1);
+  background: rgba(94, 211, 232, 0.13);
+}
+
+.bubble.tone-result { color: var(--dim); }
+
+.bubble.tone-warn {
+  background: rgba(255, 122, 138, 0.12);
+  color: #ffd2d8;
+}
+
+.bubble.tone-warn.active { border-color: var(--bad); }
+
+.helper-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+}
+
+.helper-actions .walk-step {
+  margin: 0;
+  font-family: var(--display);
+  font-size: 12px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--faint);
+}
+
+/* Actions read as actions. Inside the helper they sat next to chat bubbles
+   wearing the same rounded box, so the thing you press and the thing you
+   read looked alike. */
+.helper-actions .assist-button {
+  text-align: center;
+  font-family: var(--display);
+  font-weight: 500;
+  background: rgba(94, 211, 232, 0.12);
+  border-color: rgba(94, 211, 232, 0.5);
+  border-radius: 999px;
+}
+
+.helper-actions .assist-button:hover {
+  background: rgba(94, 211, 232, 0.2);
+}
+
+.helper-actions .link-button {
+  text-align: center;
 }

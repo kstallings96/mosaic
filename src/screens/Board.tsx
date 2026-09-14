@@ -31,8 +31,8 @@ export default function Board({
   tightest: number[];
   /** Only true once the forced moves have run out. */
   showTightest: boolean;
-  /** A region the helper is pointing at. */
-  spotlight: number | null;
+  /** Regions the helper's current line is about. */
+  spotlight: number[];
   onSelect: (region: number) => void;
   onPeek: (region: number | null) => void;
 }) {
@@ -82,7 +82,7 @@ export default function Board({
             focus !== null && focus !== i && !neighbours.has(i) ? 'dim' : '',
             locked ? 'given' : '',
             showTightest && tightest.includes(i) ? 'tightest' : '',
-            spotlight === i ? 'spotlight' : '',
+            spotlight.includes(i) ? 'spotlight' : '',
           ]
             .filter(Boolean)
             .join(' ');

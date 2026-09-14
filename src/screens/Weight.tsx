@@ -22,7 +22,7 @@ export function Weight({ count, bump, delay }: { count: number; bump: boolean; d
 
   if (count === 0) {
     return (
-      <span className={`w w-zero${bump ? ' bumping' : ''}`} style={style} title="No colours left">
+      <span className={`w w-zero${bump ? ' bumping' : ''}`} style={style} title="No colors left">
         <span className="w-shape" />
         <span className="w-num">0</span>
       </span>
@@ -30,7 +30,7 @@ export function Weight({ count, bump, delay }: { count: number; bump: boolean; d
   }
   if (count === 1) {
     return (
-      <span className={`w w-one${bump ? ' bumping' : ''}`} style={style} title="One colour left">
+      <span className={`w w-one${bump ? ' bumping' : ''}`} style={style} title="One color left">
         <span className="w-shape" />
         <span className="w-num">1</span>
       </span>
@@ -41,7 +41,7 @@ export function Weight({ count, bump, delay }: { count: number; bump: boolean; d
     <span
       className={`w w-many${bump ? ' bumping' : ''}`}
       style={{ ...style, '--heft': heft } as React.CSSProperties}
-      title={`${count} colours left`}
+      title={`${count} colors left`}
     >
       <span className="w-shape" />
     </span>

@@ -7,6 +7,8 @@ import { useColourBoard } from '../lib/useColourBoard';
 import { useScreenTiming } from '../lib/useScreenTiming';
 import Board from './Board';
 import HowToPlay from './HowToPlay';
+import Helper from './Helper';
+import type { ChatMessage, Mood } from './Helper';
 
 /** How long the student gets before the helper appears. */
 const FREE_PLAY_SECONDS = 60;
@@ -45,13 +47,11 @@ const HOW_TO: Record<string, { story: string; steps: string[] }> = {
 
 
 /**
- * What the move just did, in plain words.
+ * What the move just did, in a sentence a student will actually read.
  *
- * This is the half that teaches. Saying "placed" and stopping leaves the
- * consequence for the student to work out at exactly the moment they are
- * least likely to bother; naming how many neighbours lost an option, and
- * which of them the rule has now decided outright, is the cascade said out
- * loud instead of merely animated.
+ * This is the half that teaches, and it used to be three clauses long,
+ * which is three clauses more than anyone reads in a side panel. Short,
+ * concrete, and the pieces it names get lit on the board.
  */
 function describeResult(
   level: ColourLevel,
@@ -59,27 +59,21 @@ function describeResult(
   effect: { narrowed: number[]; nowForced: number[]; nowDead: number[] },
 ): string {
   const slot = level.words.slot;
-  const thing = level.words.thing;
   const name = COLOUR_NAMES[colour].toLowerCase();
 
-  const took =
-    effect.narrowed.length === 0
-      ? `Nothing else was waiting on it, so no other ${thing} changed.`
-      : `That takes ${name} away from ${effect.narrowed.length} ${thing}${
-          effect.narrowed.length === 1 ? '' : 's'
-        } it is joined to.`;
-
   if (effect.nowDead.length > 0) {
-    return `${took} And now ${effect.nowDead.length} of them has no ${slot}s left at all, which means something earlier has to come back out.`;
+    return `Uh oh. Now something has no ${slot}s left at all.`;
   }
+  if (effect.narrowed.length === 0) {
+    return `Nothing next to it was waiting, so nothing changed.`;
+  }
+  const took = `That knocks ${name} off ${effect.narrowed.length} neighbor${
+    effect.narrowed.length === 1 ? '' : 's'
+  }.`;
   if (effect.nowForced.length > 0) {
-    return `${took} ${effect.nowForced.length} of them ${
-      effect.nowForced.length === 1 ? 'is' : 'are'
-    } now down to one ${slot} — so the rule just decided ${
-      effect.nowForced.length === 1 ? 'that one' : 'those'
-    } for free. That is the part worth watching.`;
+    return `${took} ${effect.nowForced.length === 1 ? 'One of them is' : `${effect.nowForced.length} of them are`} down to 1 now — free move.`;
   }
-  return `${took} Nothing is down to one ${slot} yet, so I have to count again.`;
+  return took;
 }
 
 interface Step {
@@ -110,7 +104,10 @@ export default function Level({
   const [peeking, setPeeking] = useState<number | null>(null);
   const [secondsLeft, setSecondsLeft] = useState(FREE_PLAY_SECONDS);
   const [assistUnlocked, setAssistUnlocked] = useState(false);
-  const [reasons, setReasons] = useState<string[]>([]);
+  const [messages, setMessages] = useState<ChatMessage[]>([]);
+  const [activeMsg, setActiveMsg] = useState<number | null>(null);
+  const [mood, setMood] = useState<Mood>('idle');
+  const msgId = useRef(0);
   /**
    * The most-constrained ring answers a question; it is not ambient state.
    * Shown whenever nothing was forced, it marked every tied region at once
@@ -155,12 +152,17 @@ export default function Level({
   }, []);
 
   /**
-   * Reasons stack instead of replacing each other. Structural insight comes
-   * from seeing two explanations with the same shape side by side; a single
-   * line that overwrites itself turns the helper into a sequence of answers.
+   * One turn of the conversation, with the pieces it is about.
+   *
+   * Turns accumulate rather than replacing each other: two explanations
+   * with the same shape, read one after the other, are where the pattern
+   * becomes visible. A single line that overwrites itself is just a
+   * sequence of answers.
    */
-  function addReason(text: string) {
-    setReasons((r) => [text, ...r].slice(0, 3));
+  function say(text: string, highlight: number[] = [], tone: ChatMessage['tone'] = 'think') {
+    const id = (msgId.current += 1);
+    setMessages((m) => [...m, { id, text, highlight, tone }]);
+    setActiveMsg(id);
   }
 
   function handleTightest() {
@@ -170,12 +172,13 @@ export default function Level({
     if (ids.length === 0) return;
     const n = domain(level, board.boardRef.current, ids[0]).length;
     logEvent(sessionId, 'hint_most_constrained', { level: level.id, regions: ids, optionsLeft: n });
-    const thing = level.words.thing;
     const slot = level.words.slot;
-    addReason(
+    setMood('thinking');
+    say(
       ids.length === 1
-        ? `The outlined ${thing} has the fewest ${slot}s left: ${n}.`
-        : `${ids.length} ${thing}s are tied for the fewest ${slot}s left, with ${n} each.`,
+        ? `This one has the fewest left: ${n} ${slot}${n === 1 ? '' : 's'}.`
+        : `These ${ids.length} are tied for fewest: ${n} ${slot}${n === 1 ? '' : 's'} each.`,
+      ids,
     );
   }
 
@@ -208,13 +211,15 @@ export default function Level({
     const blockers = blockingRegions(level, board.boardRef.current);
     if (blockers.length === 0) return false;
     board.clearRegions(blockers);
-    const thing = level.words.thing;
-    addReason(
-      `I could not finish from there. ${blockers.length} ${thing}${blockers.length === 1 ? '' : 's'} had a ` +
-        `${level.words.slot} that leaves no way to fill in the rest, so I took ` +
-        `${blockers.length === 1 ? 'it' : 'them'} back out. Nothing was wrong with the rule — it just ` +
-        `closed off every ending.`,
+    setMood('concerned');
+    say(
+      `That board could not be finished. I took ${blockers.length} move${
+        blockers.length === 1 ? '' : 's'
+      } back out.`,
+      blockers,
+      'warn',
     );
+    say('No rule was broken. They just closed off every ending.');
     return true;
   }
 
@@ -226,22 +231,31 @@ export default function Level({
       walkRef.current = null;
       // Only silence left is a finished board; anything else gets said.
       if (!board.solved) {
-        addReason('I cannot find a move from here. Try Undo, then ask me again.');
+        setMood('concerned');
+        say('I am stuck too. Hit Undo, then ask me again.', [], 'warn');
       }
       return;
     }
-    const thing = level.words.thing;
     const slot = level.words.slot;
     const tied = mostConstrained(level, board.boardRef.current).length;
+    setMood('thinking');
 
     // Said before anything moves, so the reasoning stands on its own instead
     // of being justified after the fact by an answer appearing.
+    // Two short turns instead of one paragraph: what it sees, then what it
+    // is going to do about it. Both point at the pieces they name.
     const looking =
       move.optionsLeft === 1
-        ? 'I counted how many ' + slot + 's each ' + thing + ' has left. This one is down to 1, so I am not guessing. The rule already picked it.'
-        : 'I counted how many ' + slot + 's each ' + thing + ' has left. The smallest number is ' + move.optionsLeft +
-          (tied > 1 ? ', and ' + tied + ' of them are tied there' : '') +
-          '. I start there, because the fewer choices something has, the harder it is to get it wrong.';
+        ? 'Only 1 ' + slot + ' fits here. Not a guess — the rule already picked it.'
+        : tied > 1
+          ? 'Nothing is down to 1 yet. These ' + tied + ' are tied for fewest: ' + move.optionsLeft + ' each.'
+          : 'Nothing is down to 1 yet. This one has fewest: ' + move.optionsLeft + '.';
+
+    const pointing = move.optionsLeft === 1 ? [move.region] : mostConstrained(level, board.boardRef.current);
+    say(looking, pointing);
+    if (move.optionsLeft > 1) {
+      say('Fewer choices, less chance of being wrong. I start there.', [move.region]);
+    }
 
     const next: Step = { ...move, looking, result: '', phase: 'considering', index, total };
     setWalk(next);
@@ -268,7 +282,8 @@ export default function Level({
     const next: Step = { ...current, result, phase: 'placed' };
     setWalk(next);
     walkRef.current = next;
-    addReason(result);
+    setMood(effect.nowDead.length ? 'concerned' : 'pleased');
+    say(result, [current.region, ...effect.narrowed], effect.nowDead.length ? 'warn' : 'result');
   }
 
   async function autoPlay(index: number, total: number) {
@@ -288,7 +303,8 @@ export default function Level({
     walkRef.current = step;
     board.applyDirect(move.region, move.colour);
     logEvent(sessionId, 'walkthrough_step', { level: level.id, index, region: move.region, auto: true });
-    addReason(result);
+    setMood('pleased');
+    say(result, [move.region, ...effect.narrowed], 'result');
     window.setTimeout(() => void autoPlay(index + 1, total), WALK_STEP_MS);
   }
 
@@ -304,6 +320,13 @@ export default function Level({
   useEffect(() => {
     setShowTightest(false);
   }, [placedCount]);
+
+  /**
+   * The pieces the open chat line is about. This is the whole reason the
+   * helper became a conversation: every turn can point, so a student never
+   * has to work out which part of the board a sentence meant.
+   */
+  const pointedAt = messages.find((m) => m.id === activeMsg)?.highlight ?? [];
 
   const legal = board.selected === null ? null : domain(level, board.board, board.selected);
   const locked = walk !== null;
@@ -345,7 +368,7 @@ export default function Level({
           peeking={peeking}
           tightest={board.tightest}
           showTightest={showTightest}
-          spotlight={walk?.phase === 'considering' ? walk.region : null}
+          spotlight={pointedAt}
           onSelect={board.select}
           onPeek={setPeeking}
         />
@@ -397,38 +420,21 @@ export default function Level({
           </div>
 
           {assistUnlocked && !board.solved && (
-            <div className="assist">
-              <div className="assist-badge">
-                <span className="dot" aria-hidden="true" />
-                HELPER
-              </div>
-
-              {!walk && <p className="assist-line">Stuck? Ask me. I will show my work.</p>}
-
-              {!walk && (
-                <div className="assist-buttons">
+            <Helper messages={messages} mood={mood} activeId={activeMsg} onPick={setActiveMsg}>
+              {!walk ? (
+                <>
                   <button type="button" className="assist-button" onClick={handleTightest}>
                     Which has the fewest choices left?
                   </button>
                   <button type="button" className="assist-button" onClick={() => startWalkthrough(false)}>
                     Show me how you would do it
                   </button>
-                </div>
-              )}
-
-              {walk && (
-                <div className="walk">
+                </>
+              ) : (
+                <>
                   <p className="walk-step">
                     Step {walk.index + 1} of {walk.total}
-                    {walk.phase === 'considering' ? ' \u00b7 picking' : ' \u00b7 what that did'}
                   </p>
-
-                  {/* Both halves stay up once the move lands, so the reason
-                      and its consequence can be read together instead of the
-                      reason scrolling away the moment it pays off. */}
-                  <p className="walk-reason">{walk.looking}</p>
-                  {walk.phase === 'placed' && <p className="walk-result">{walk.result}</p>}
-
                   {walk.phase === 'considering' ? (
                     <button type="button" className="assist-button" onClick={commitConsidered}>
                       OK, fill it in
@@ -445,19 +451,9 @@ export default function Level({
                   <button type="button" className="link-button" onClick={stopWalkthrough}>
                     Stop — let me try
                   </button>
-                </div>
+                </>
               )}
-
-              {reasons.length > 0 && (
-                <ol className="reasons">
-                  {reasons.map((r, i) => (
-                    <li key={`${i}-${r.slice(0, 12)}`} className={i === 0 ? 'newest' : ''}>
-                      {r}
-                    </li>
-                  ))}
-                </ol>
-              )}
-            </div>
+            </Helper>
           )}
         </aside>
       </div>
