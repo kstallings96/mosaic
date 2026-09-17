@@ -76,22 +76,19 @@ function describeResult(
   colour: number,
   effect: { narrowed: number[]; nowForced: number[]; nowDead: number[] },
 ): string {
+  const thing = level.words.thing;
   const slot = level.words.slot;
   const name = slotWord(level, colour);
+  const n = effect.narrowed.length;
 
-  if (effect.nowDead.length > 0) {
-    return `Uh oh. Now something has no ${slot}s left at all.`;
-  }
-  if (effect.narrowed.length === 0) {
-    return `Nothing next to it was waiting, so nothing changed.`;
-  }
-  const took = `That knocks ${name} off ${effect.narrowed.length} neighbor${
-    effect.narrowed.length === 1 ? '' : 's'
-  }.`;
-  if (effect.nowForced.length > 0) {
-    return `${took} ${effect.nowForced.length === 1 ? 'One of them is' : `${effect.nowForced.length} of them are`} down to 1 now — free move.`;
-  }
-  return took;
+  if (effect.nowDead.length > 0) return `Uh oh — a ${thing} has no ${slot}s left now.`;
+  if (n === 0) return 'Nothing next to it was waiting. No change.';
+
+  const took = `${n} neighbor${n === 1 ? '' : 's'} just lost ${name}.`;
+  const f = effect.nowForced.length;
+  // "Free move" rather than "down to one": the first two levels already
+  // taught that a green 1 is free, so this is the word they know.
+  return f > 0 ? `${took} That’s ${f} free move${f === 1 ? '' : 's'}.` : took;
 }
 
 interface Step {
@@ -190,12 +187,13 @@ export default function Level({
     if (ids.length === 0) return;
     const n = domain(level, board.boardRef.current, ids[0]).length;
     logEvent(sessionId, 'hint_most_constrained', { level: level.id, regions: ids, optionsLeft: n });
+    const thing = level.words.thing;
     const slot = level.words.slot;
     setMood('thinking');
     say(
       ids.length === 1
-        ? `This one has the fewest left: ${n} ${slot}${n === 1 ? '' : 's'}.`
-        : `These ${ids.length} are tied for fewest: ${n} ${slot}${n === 1 ? '' : 's'} each.`,
+        ? `This ${thing} has the fewest left: ${n} ${slot}${n === 1 ? '' : 's'}.`
+        : `${ids.length} ${thing}s tie for fewest: ${n} ${slot}${n === 1 ? '' : 's'} each.`,
       ids,
     );
   }
@@ -231,13 +229,12 @@ export default function Level({
     board.clearRegions(blockers);
     setMood('concerned');
     say(
-      `That board could not be finished. I took ${blockers.length} move${
+      `Dead end. I took ${blockers.length} move${
         blockers.length === 1 ? '' : 's'
-      } back out.`,
+      } back out — no rule broken, they just left no way to finish.`,
       blockers,
       'warn',
     );
-    say('No rule was broken. They just closed off every ending.');
     return true;
   }
 
@@ -250,30 +247,29 @@ export default function Level({
       // Only silence left is a finished board; anything else gets said.
       if (!board.solved) {
         setMood('concerned');
-        say('I am stuck too. Hit Undo, then ask me again.', [], 'warn');
+        say('I’m stuck too. Hit Undo, then ask me again.', [], 'warn');
       }
       return;
     }
+    const thing = level.words.thing;
     const slot = level.words.slot;
     const tied = mostConstrained(level, board.boardRef.current).length;
     setMood('thinking');
 
-    // Said before anything moves, so the reasoning stands on its own instead
-    // of being justified after the fact by an answer appearing.
-    // Two short turns instead of one paragraph: what it sees, then what it
-    // is going to do about it. Both point at the pieces they name.
+    // Said before anything moves, so the reasoning stands on its own
+    // instead of being justified after the fact by an answer appearing.
+    // One turn, not two: the panel is narrow and a second bubble saying
+    // why fewest-first is a good idea just pushed the first one up.
     const looking =
       move.optionsLeft === 1
-        ? 'Only 1 ' + slot + ' fits here. Not a guess — the rule already picked it.'
+        ? `Only 1 ${slot} fits here. That’s the rule, not a guess.`
         : tied > 1
-          ? 'Nothing is down to 1 yet. These ' + tied + ' are tied for fewest: ' + move.optionsLeft + ' each.'
-          : 'Nothing is down to 1 yet. This one has fewest: ' + move.optionsLeft + '.';
+          ? `${tied} ${thing}s tie for fewest: ${move.optionsLeft} each. I start there.`
+          : `This ${thing} has the fewest: ${move.optionsLeft}. I start there.`;
 
-    const pointing = move.optionsLeft === 1 ? [move.region] : mostConstrained(level, board.boardRef.current);
+    const pointing =
+      move.optionsLeft === 1 ? [move.region] : mostConstrained(level, board.boardRef.current);
     say(looking, pointing);
-    if (move.optionsLeft > 1) {
-      say('Fewer choices, less chance of being wrong. I start there.', [move.region]);
-    }
 
     const next: Step = { ...move, looking, result: '', phase: 'considering', index, total };
     setWalk(next);

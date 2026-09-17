@@ -770,13 +770,12 @@
 
 /* ---------- the conversation ---------- */
 
+/* Three turns at most, so it never needs to scroll and never becomes a
+   column of boxes to pick through. */
 .chat {
   display: flex;
   flex-direction: column;
-  gap: 7px;
-  max-height: 34svh;
-  overflow-y: auto;
-  padding-right: 2px;
+  gap: 6px;
 }
 
 .chat-empty {
@@ -788,18 +787,24 @@
 /* Each turn is a button because each turn can point: tapping one lights
    the pieces it is about, so an explanation that did not land can be
    recovered instead of scrolling away. */
+/* One bubble style. Three tones wearing three different backgrounds made
+   a short conversation look like a form with sections in it. */
 .bubble {
   min-height: 0;
   text-align: left;
-  font: 14px/1.45 var(--sans);
+  font: 13.5px/1.5 var(--sans);
   color: var(--ink);
   background: rgba(255, 255, 255, 0.07);
   border: 1px solid transparent;
-  border-radius: 12px 12px 12px 4px;
-  padding: 9px 11px;
+  border-left: 3px solid transparent;
+  border-radius: 4px 12px 12px 4px;
+  padding: 8px 11px;
   cursor: default;
   animation: bubble-in 0.22s ease-out;
 }
+
+/* The newest turn is the one being read; the ones above it are context. */
+.bubble:not(:last-child) { opacity: 0.55; }
 
 @keyframes bubble-in {
   from { opacity: 0; transform: translateY(4px); }
@@ -810,18 +815,14 @@
 .bubble.points:hover { background: rgba(255, 255, 255, 0.11); }
 
 .bubble.active {
-  border-color: var(--c1);
-  background: rgba(94, 211, 232, 0.13);
+  opacity: 1;
+  border-left-color: var(--c1);
+  background: rgba(94, 211, 232, 0.12);
 }
 
-.bubble.tone-result { color: var(--dim); }
-
-.bubble.tone-warn {
-  background: rgba(255, 122, 138, 0.12);
-  color: #ffd2d8;
-}
-
-.bubble.tone-warn.active { border-color: var(--bad); }
+/* A warning earns an edge, not a whole coloured panel. */
+.bubble.tone-warn { border-left-color: var(--bad); }
+.bubble.tone-warn.active { background: rgba(255, 122, 138, 0.12); }
 
 .helper-actions {
   display: flex;
@@ -869,28 +870,46 @@
    Chromebook panel, and a student who cannot tell the teal from the pink. */
 .animal-wrap { pointer-events: none; }
 
-/* Two inks, dark and pale. The pale one does most of the work: a one-ink
-   silhouette is a blob at this size no matter how clean its outline. The
-   dark is not pure black, which looks like a hole punched in the crate. */
+/* Pale with a dark outline, not dark with pale detail. A dark animal on a
+   saturated crate is a hole in the crate — at forty pixels the lion's mane
+   swallowed its face and all three read as blobs. The outline lives here
+   so every shape in the drawing inherits it. */
 .animal {
-  fill: #221b2d;
-  color: #221b2d;
+  fill: #fdf6ec;
+  stroke: #241d30;
+  stroke-width: 1.15;
+  stroke-linejoin: round;
+  color: #241d30;
 }
 
-.animal-pale { fill: #fdf6ec; }
+.animal-ink { fill: #241d30; stroke: none; }
 
 .animal-line {
   fill: none;
-  stroke: currentColor;
+  stroke: #241d30;
+  stroke-width: 1.05;
   stroke-linecap: round;
   stroke-linejoin: round;
 }
 
-.animal-pale-line {
+/* A tube: the dark pass, then the pale one over it. */
+.animal-edge {
+  fill: none;
+  stroke: #241d30;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.animal-tube {
   fill: none;
   stroke: #fdf6ec;
   stroke-linecap: round;
+  stroke-linejoin: round;
 }
+
+/* For shapes that overlap one another and have to merge into one mass. */
+.animal-flat-ink { fill: #241d30; stroke: none; }
+.animal-flat { fill: #fdf6ec; stroke: none; }
 
 /* The counter moved off the crate to its top corner, so it needs its own
    disc to stay legible against whatever is behind it. */

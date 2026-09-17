@@ -38,11 +38,27 @@ export default function Board({
   onPeek: (region: number | null) => void;
 }) {
   // On the last level a node is a crate, not a dot: a square that can
-  // hold something, because on that level it does. Half-side rather than
-  // radius, so the crate covers about the same ground as the disc did.
+  // hold something, because on that level it does.
   const CRATE = level.icons === 'animals';
   const NODE_R = 30;
-  const HALF = 35;
+
+  // Half-side. The crate exists to be looked into, so it is sized from the
+  // animal rather than from the dot it replaced: 88 across leaves an animal
+  // that still reads at a third of the board's width, and the tightest pair
+  // of nodes on this layout is 140 apart, so neighbours stay well clear.
+  const HALF = 44;
+  // Planks at the lid and the base, leaving the middle of the crate to the
+  // animal. Without them an empty crate is a square, and a square is not a
+  // thing you put an animal in.
+  const PLANK = 3.6;
+  const PLANK_IN = 7;
+  const ANIMAL = 68;
+
+  // The generated view leaves 34 units of margin, which was the radius of
+  // the dot a node used to be. A crate and the counter on its shoulder
+  // reach further than that, so the last level asks for the difference
+  // back rather than having a corner clipped.
+  const pad = CRATE ? 22 : 0;
 
   const { cascade, cascadeKey } = useCascade(domains);
   const focus = peeking ?? selected;
@@ -52,7 +68,9 @@ export default function Board({
     <div className="board-wrap">
       <svg
         className="board"
-        viewBox={`${level.view.minX} ${level.view.minY} ${level.view.w} ${level.view.h}`}
+        viewBox={`${level.view.minX - pad} ${level.view.minY - pad} ${level.view.w + pad * 2} ${
+          level.view.h + pad * 2
+        }`}
         role="group"
         aria-label={`${level.nodes.length} ${level.words.thing}s`}
       >
@@ -131,22 +149,20 @@ export default function Board({
                     rx={6}
                     fill={colour === undefined ? 'var(--empty)' : COLOURS[colour]}
                   />
-                  {/* Two planks. Without them an empty crate is a square,
-                      and a square is not a thing you put an animal in. */}
                   <g className={`slats${colour === undefined ? ' on-empty' : ' on-filled'}`}>
                     <rect
-                      x={node.x - HALF + 5}
-                      y={node.y - HALF + 9}
-                      width={HALF * 2 - 10}
-                      height={3.2}
-                      rx={1.6}
+                      x={node.x - HALF + 6}
+                      y={node.y - HALF + PLANK_IN}
+                      width={HALF * 2 - 12}
+                      height={PLANK}
+                      rx={PLANK / 2}
                     />
                     <rect
-                      x={node.x - HALF + 5}
-                      y={node.y + HALF - 11.8}
-                      width={HALF * 2 - 10}
-                      height={3.2}
-                      rx={1.6}
+                      x={node.x - HALF + 6}
+                      y={node.y + HALF - PLANK_IN - PLANK}
+                      width={HALF * 2 - 12}
+                      height={PLANK}
+                      rx={PLANK / 2}
                     />
                   </g>
                   {locked && (
@@ -165,12 +181,9 @@ export default function Board({
                   {colour !== undefined && (
                     <g
                       className="animal-wrap"
-                      transform={`translate(${node.x - 24} ${node.y - 24})`}
+                      transform={`translate(${node.x - ANIMAL / 2} ${node.y - ANIMAL / 2})`}
                     >
-                      {/* As large as the planks allow: the giraffe's horns
-                          reach the top of its box and would cross the
-                          upper plank at anything bigger. */}
-                      <AnimalHead index={colour} size={48} />
+                      <AnimalHead index={colour} size={ANIMAL} />
                     </g>
                   )}
                 </>
@@ -188,8 +201,8 @@ export default function Board({
 
               {n !== undefined && (
                 <foreignObject
-                  x={CRATE ? node.x + 19 : node.x - 17}
-                  y={CRATE ? node.y - 46 : node.y - 17}
+                  x={CRATE ? node.x + 22 : node.x - 17}
+                  y={CRATE ? node.y - 50 : node.y - 17}
                   width={34}
                   height={34}
                 >

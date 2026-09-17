@@ -10,8 +10,13 @@ import type { ReactNode } from 'react';
  * turns from a character who is clearly talking to you get read, and each
  * turn points at the pieces it is about.
  *
- * Tapping any earlier line lights its pieces again, so a student can go
- * back to something that did not land instead of losing it off the top.
+ * Only the last few turns are kept on screen. The panel is narrow, and a
+ * column of eight bubbles is a wall of text whichever way you scroll it —
+ * the turn you are on is the one that matters, and the two before it are
+ * there so the shape of the reasoning is visible.
+ *
+ * Tapping any of them lights its pieces again, so a student can go back to
+ * something that did not land instead of losing it off the top.
  */
 
 export interface ChatMessage {
@@ -23,6 +28,9 @@ export interface ChatMessage {
 }
 
 export type Mood = 'idle' | 'thinking' | 'pleased' | 'concerned';
+
+/** How many turns stay on screen. */
+const KEEP = 3;
 
 /**
  * Deliberately its own robot rather than a likeness of a film character:
@@ -71,6 +79,7 @@ export default function Helper({
   children: ReactNode;
 }) {
   const feed = useRef<HTMLDivElement>(null);
+  const shown = messages.slice(-KEEP);
 
   // A new line is the whole point of looking, so it is never left below the
   // fold of a short panel.
@@ -92,10 +101,10 @@ export default function Helper({
       </div>
 
       <div className="chat" ref={feed}>
-        {messages.length === 0 ? (
-          <p className="chat-empty">Stuck? Ask me. I will show my work.</p>
+        {shown.length === 0 ? (
+          <p className="chat-empty">Stuck? Ask me — I’ll show my work.</p>
         ) : (
-          messages.map((m) => (
+          shown.map((m) => (
             <button
               key={m.id}
               type="button"
