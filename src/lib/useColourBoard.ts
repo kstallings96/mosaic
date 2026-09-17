@@ -13,6 +13,7 @@ import {
 } from './colouring';
 import type { Board } from './colouring';
 import { logEvent } from './logger';
+import { Article, slotWord } from './words';
 
 /**
  * All of a level's play state in one place, so the screen stays a drawing
@@ -105,7 +106,7 @@ export function useColourBoard(level: ColourLevel, sessionId: string, onSolved: 
 
   function select(region: number) {
     if (isGiven(level, region)) {
-      say(`That ${level.words.thing} was filled in to start. It cannot change.`);
+      say(`That ${level.words.thing} was already filled in before we started. It can’t change.`);
       return;
     }
     const next = selected === region ? null : region;
@@ -137,7 +138,12 @@ export function useColourBoard(level: ColourLevel, sessionId: string, onSolved: 
     const clash = blockedBy(level, current, region, colour);
     if (clash.length > 0) {
       blockedAttempts.current += 1;
-      say(`Something it is joined to already has that ${level.words.slot}.`);
+      say(
+        `${Article(level.words.thing)} ${level.words.thing} touching it already has ${slotWord(
+          level,
+          colour,
+        )}.`,
+      );
       logEvent(sessionId, 'colour_blocked', { level: level.id, region, colour, blockedBy: clash });
       return;
     }

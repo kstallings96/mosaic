@@ -375,7 +375,7 @@ export const LEVELS: ColourLevel[] = [
     "id": "l3",
     "title": "Level 3 · The Zoo",
     "rule": "Crates that touch can’t hold the same animal.",
-    "note": "Eleven crates, three animals, and nothing here is decided for you.",
+    "note": "Eleven crates, three animals, and nothing filled in for you.",
     "words": {
       "thing": "crate",
       "slot": "animal"

@@ -262,7 +262,7 @@ console.log('l3: ' + g.n + ' crates, ' + g.edges + ' touching pairs, ' +
 
 const L3 = { id: 'l3', title: 'Level 3 · The Zoo',
   rule: 'Crates that touch can\u2019t hold the same animal.',
-  note: 'Eleven crates, three animals, and nothing here is decided for you.',
+  note: 'Eleven crates, three animals, and nothing filled in for you.',
   words: { thing: 'crate', slot: 'animal' },
   icons: 'animals',
   kind: 'graph', k: 3, nodes: pos, adj: g.adj, given: g.given, solution: g.sol,

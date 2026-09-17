@@ -98,7 +98,7 @@ export default function Helper({
         <div className="helper-who">
           <span className="helper-name">BIT</span>
           <span className="helper-role">
-            {mood === 'thinking' ? 'thinking…' : mood === 'concerned' ? 'hmm' : 'here to help'}
+            {mood === 'thinking' ? 'thinking…' : mood === 'concerned' ? 'uh oh' : 'here to help'}
           </span>
         </div>
       </div>
@@ -110,7 +110,7 @@ export default function Helper({
 
       <div className="chat" ref={feed}>
         {shown.length === 0 ? (
-          <p className="chat-empty">Stuck? Ask me — I’ll show my work.</p>
+          <p className="chat-empty">Stuck? Ask me. I’ll tell you what I’m thinking.</p>
         ) : (
           shown.map((m) => (
             <button

@@ -4,6 +4,7 @@ import type { ColourLevel } from '../data/levels';
 import { blockingRegions, domain, effectOf, mostConstrained, suggest } from '../lib/colouring';
 import { logEvent } from '../lib/logger';
 import { useColourBoard } from '../lib/useColourBoard';
+import { article, slotWord } from '../lib/words';
 import { useScreenTiming } from '../lib/useScreenTiming';
 import Board from './Board';
 import HowToPlay from './HowToPlay';
@@ -22,7 +23,7 @@ const HOW_TO: Record<string, { story: string; steps: string[] }> = {
     story: 'Color the whole map. There is only one rule, and it is at the top of the screen.',
     steps: [
       'Tap a region, then tap a color.',
-      'A color that a neighbor already took gets crossed out. You cannot pick it.',
+      'If a region it touches already has a color, that color gets crossed out. You can’t pick it.',
       'A green 1 means only one color still fits. Those are free — take them.',
       'Press and hold any region to see which ones it touches.',
     ],
@@ -37,32 +38,15 @@ const HOW_TO: Record<string, { story: string; steps: string[] }> = {
     ],
   },
   l3: {
-    story: 'Loading day at the zoo. Every crate takes one animal, and a line between two crates means they ride side by side.',
+    story: 'Loading day at the zoo. Every crate takes one animal, and a line between two crates means those two ride touching each other.',
     steps: [
       'Three animals: elephant, lion, giraffe. Each one is a color.',
-      'Two crates joined by a line cannot hold the same animal — they would go at each other the whole way.',
-      'Nothing is decided for you here. Start with the crate that has the fewest animals left.',
+      'Two crates with a line between them are touching. They can’t hold the same animal — those two would fight the whole way.',
+      'Nothing is filled in for you here. Start with the crate that has the fewest animals left.',
     ],
   },
 };
 
-
-/**
- * What to call one of the three choices.
- *
- * On the last level they are animals rather than colours, and an animal
- * takes an article where a colour does not: teal, but the lion.
- */
-function slotWord(level: ColourLevel, v: number): string {
-  return level.icons === 'animals'
-    ? `the ${animalName(v).toLowerCase()}`
-    : COLOUR_NAMES[v].toLowerCase();
-}
-
-/** 'a crate', but 'an animal'. */
-function article(word: string): string {
-  return /^[aeiou]/i.test(word) ? 'an' : 'a';
-}
 
 /**
  * Whether the rule made that move or the helper did.
@@ -72,10 +56,13 @@ function article(word: string): string {
  * to come back out. Saying "not a guess" only when it is forced leaves the
  * other case unlabelled, and unlabelled reads as certain.
  */
-function chose(optionsLeft: number): string {
-  // It does not name the animal: the sentence after this one already does,
-  // and hearing it twice in a row reads like a stutter.
-  return optionsLeft === 1 ? 'Forced, not chosen. ' : 'My call, not the rule’s. ';
+function chose(level: ColourLevel, optionsLeft: number): string {
+  // It says how many fitted, not which one: the sentence after this one
+  // names the animal, and hearing it twice in a row reads like a stutter.
+  const slot = level.words.slot;
+  return optionsLeft === 1
+    ? `Only one ${slot} fit, so the rule picked it. `
+    : `More than one ${slot} fit, so I picked. `;
 }
 
 /**
@@ -95,14 +82,19 @@ function describeResult(
   const name = slotWord(level, colour);
   const n = effect.narrowed.length;
 
-  if (effect.nowDead.length > 0) return `Uh oh — a ${thing} has no ${slot}s left now.`;
-  if (n === 0) return 'Nothing next to it was waiting. No change.';
+  if (effect.nowDead.length > 0) return `Uh oh. Now a ${thing} has no ${slot} that fits.`;
+  if (n === 0) return `No ${thing} touching it changed.`;
 
-  const took = `${n} neighbor${n === 1 ? '' : 's'} just lost ${name}.`;
+  // "Touching" is the word the rule at the top of the screen uses, so it
+  // is the one word here a student has already been taught. "Neighbour"
+  // was a second name for the same thing and nobody had defined it.
+  const took = `Now ${n} ${thing}${n === 1 ? '' : 's'} touching it can’t take ${name}.`;
   const f = effect.nowForced.length;
-  // "Free move" rather than "down to one": the first two levels already
-  // taught that a green 1 is free, so this is the word they know.
-  return f > 0 ? `${took} That’s ${f} free move${f === 1 ? '' : 's'}.` : took;
+  // "Free" rather than "down to one": levels 1 and 2 already taught that a
+  // green 1 is free, so this is the word they know.
+  return f > 0
+    ? `${took} ${f} of those ${f === 1 ? 'is' : 'are'} down to one ${slot} — free.`
+    : took;
 }
 
 interface Step {
@@ -205,7 +197,9 @@ export default function Level({
     if (board.dead.length > 0) {
       setMood('concerned');
       say(
-        `This ${level.words.thing} has no ${level.words.slot}s left at all. That is a dead end — Undo, then ask me again.`,
+        `This ${level.words.thing} is stuck. Every ${level.words.slot} is already in ${article(
+          level.words.thing,
+        )} ${level.words.thing} that touches it, so nothing fits. Hit Undo.`,
         board.dead,
         'warn',
       );
@@ -221,8 +215,12 @@ export default function Level({
     setMood('thinking');
     say(
       ids.length === 1
-        ? `This ${thing} has the fewest left: ${n} ${slot}${n === 1 ? '' : 's'}.`
-        : `${ids.length} ${thing}s tie for fewest: ${n} ${slot}${n === 1 ? '' : 's'} each.`,
+        ? `This ${thing} has the fewest left: ${
+            n === 1 ? `only 1 ${slot} still fits` : `${n} ${slot}s still fit`
+          }.`
+        : `${ids.length} ${thing}s are tied for the fewest. Each one has ${n} ${slot}${
+            n === 1 ? ' that still fits' : 's that still fit'
+          }.`,
       ids,
     );
   }
@@ -258,9 +256,11 @@ export default function Level({
     board.clearRegions(blockers);
     setMood('concerned');
     say(
-      `Dead end. I took ${blockers.length} move${
+      `Dead end. I took ${blockers.length} of my own pick${
         blockers.length === 1 ? '' : 's'
-      } back out — no rule broken, they just left no way to finish.`,
+      } back out. ${blockers.length === 1 ? 'It' : 'They'} broke no rule — ${
+        blockers.length === 1 ? 'it' : 'they'
+      } just left no way to finish.`,
       blockers,
       'warn',
     );
@@ -291,12 +291,10 @@ export default function Level({
     // why fewest-first is a good idea just pushed the first one up.
     const looking =
       move.optionsLeft === 1
-        ? `Fewest here: 1. One ${slot} fits, so the rule decides it — I’m not choosing.`
+        ? `Only 1 ${slot} still fits this ${thing}. That’s the fewest on the board, so I’m going here.`
         : tied > 1
-          ? `Fewest here: ${move.optionsLeft}, tied with ${tied - 1} other ${
-              tied === 2 ? thing : thing + 's'
-            }. More than one fits, so this one is my call.`
-          : `Fewest here: ${move.optionsLeft}. More than one fits, so this one is my call.`;
+          ? `${tied} ${thing}s are tied for the fewest, with ${move.optionsLeft} ${slot}s each. I’m starting with this one.`
+          : `This ${thing} has the fewest left: ${move.optionsLeft} ${slot}s. That’s why I’m going here.`;
 
     const pointing =
       move.optionsLeft === 1 ? [move.region] : mostConstrained(level, board.boardRef.current);
@@ -329,7 +327,7 @@ export default function Level({
     walkRef.current = next;
     setMood(effect.nowDead.length ? 'concerned' : 'pleased');
     say(
-      chose(current.optionsLeft) + result,
+      chose(level, current.optionsLeft) + result,
       [current.region, ...effect.narrowed],
       effect.nowDead.length ? 'warn' : 'result',
     );
@@ -354,7 +352,7 @@ export default function Level({
     logEvent(sessionId, 'walkthrough_step', { level: level.id, index, region: move.region, auto: true });
     setMood('pleased');
     say(
-      chose(move.optionsLeft) + result,
+      chose(level, move.optionsLeft) + result,
       [move.region, ...effect.narrowed],
       'result',
     );
@@ -485,13 +483,13 @@ export default function Level({
               messages={messages}
               mood={mood}
               activeId={activeMsg}
-              rule={`My rule: look at the ${level.words.thing} with the fewest ${level.words.slot}s left.`}
+              rule={`My rule: always go to the ${level.words.thing} with the fewest ${level.words.slot}s left.`}
               onPick={setActiveMsg}
             >
               {!walk ? (
                 <>
                   <button type="button" className="assist-button" onClick={handleTightest}>
-                    Which has the fewest choices left?
+                    Which {level.words.thing} has the fewest left?
                   </button>
                   <button type="button" className="assist-button" onClick={() => startWalkthrough(false)}>
                     Show me how you would do it
@@ -542,7 +540,7 @@ export default function Level({
             fewest {level.words.slot}s.
           </strong>
         ) : (
-          `Press and hold a ${level.words.thing} to see what it is joined to.`
+          `Press and hold a ${level.words.thing} to see which ones it touches.`
         )}
       </p>
     </div>

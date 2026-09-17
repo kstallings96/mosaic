@@ -17,7 +17,9 @@
  * it sticks out past the head, and loses it underneath.
  */
 
-export const ANIMALS = ['Elephant', 'Lion', 'Giraffe'] as const;
+import { ANIMAL_NAMES } from '../lib/words';
+
+export const ANIMALS = ANIMAL_NAMES;
 
 export function animalName(index: number): string {
   return ANIMALS[index % ANIMALS.length];
