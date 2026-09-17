@@ -65,6 +65,20 @@ function article(word: string): string {
 }
 
 /**
+ * Whether the rule made that move or the helper did.
+ *
+ * These are not the same thing and a student has to be able to tell them
+ * apart: one is the method working, the other is a choice that might have
+ * to come back out. Saying "not a guess" only when it is forced leaves the
+ * other case unlabelled, and unlabelled reads as certain.
+ */
+function chose(optionsLeft: number): string {
+  // It does not name the animal: the sentence after this one already does,
+  // and hearing it twice in a row reads like a stutter.
+  return optionsLeft === 1 ? 'Forced, not chosen. ' : 'My call, not the rule’s. ';
+}
+
+/**
  * What the move just did, in a sentence a student will actually read.
  *
  * This is the half that teaches, and it used to be three clauses long,
@@ -94,6 +108,8 @@ function describeResult(
 interface Step {
   region: number;
   colour: number;
+  /** How many fitted when it was picked — one means the rule chose, not BIT. */
+  optionsLeft: number;
   /** Said before the move: what it is looking at, and why that one. */
   looking: string;
   /** Said after: what the move actually did to everything else. */
@@ -183,6 +199,19 @@ export default function Level({
   function handleTightest() {
     board.countHint();
     setShowTightest(true);
+
+    // Zero is not the fewest choices, it is a contradiction, and sending a
+    // student to play there would be the worst advice on the board.
+    if (board.dead.length > 0) {
+      setMood('concerned');
+      say(
+        `This ${level.words.thing} has no ${level.words.slot}s left at all. That is a dead end — Undo, then ask me again.`,
+        board.dead,
+        'warn',
+      );
+      return;
+    }
+
     const ids = board.tightest;
     if (ids.length === 0) return;
     const n = domain(level, board.boardRef.current, ids[0]).length;
@@ -262,10 +291,12 @@ export default function Level({
     // why fewest-first is a good idea just pushed the first one up.
     const looking =
       move.optionsLeft === 1
-        ? `Only 1 ${slot} fits here. That’s the rule, not a guess.`
+        ? `Fewest here: 1. One ${slot} fits, so the rule decides it — I’m not choosing.`
         : tied > 1
-          ? `${tied} ${thing}s tie for fewest: ${move.optionsLeft} each. I start there.`
-          : `This ${thing} has the fewest: ${move.optionsLeft}. I start there.`;
+          ? `Fewest here: ${move.optionsLeft}, tied with ${tied - 1} other ${
+              tied === 2 ? thing : thing + 's'
+            }. More than one fits, so this one is my call.`
+          : `Fewest here: ${move.optionsLeft}. More than one fits, so this one is my call.`;
 
     const pointing =
       move.optionsLeft === 1 ? [move.region] : mostConstrained(level, board.boardRef.current);
@@ -297,7 +328,11 @@ export default function Level({
     setWalk(next);
     walkRef.current = next;
     setMood(effect.nowDead.length ? 'concerned' : 'pleased');
-    say(result, [current.region, ...effect.narrowed], effect.nowDead.length ? 'warn' : 'result');
+    say(
+      chose(current.optionsLeft) + result,
+      [current.region, ...effect.narrowed],
+      effect.nowDead.length ? 'warn' : 'result',
+    );
   }
 
   async function autoPlay(index: number, total: number) {
@@ -318,7 +353,11 @@ export default function Level({
     board.applyDirect(move.region, move.colour);
     logEvent(sessionId, 'walkthrough_step', { level: level.id, index, region: move.region, auto: true });
     setMood('pleased');
-    say(result, [move.region, ...effect.narrowed], 'result');
+    say(
+      chose(move.optionsLeft) + result,
+      [move.region, ...effect.narrowed],
+      'result',
+    );
     window.setTimeout(() => void autoPlay(index + 1, total), WALK_STEP_MS);
   }
 
@@ -442,7 +481,13 @@ export default function Level({
           </div>
 
           {assistUnlocked && !board.solved && (
-            <Helper messages={messages} mood={mood} activeId={activeMsg} onPick={setActiveMsg}>
+            <Helper
+              messages={messages}
+              mood={mood}
+              activeId={activeMsg}
+              rule={`My rule: look at the ${level.words.thing} with the fewest ${level.words.slot}s left.`}
+              onPick={setActiveMsg}
+            >
               {!walk ? (
                 <>
                   <button type="button" className="assist-button" onClick={handleTightest}>

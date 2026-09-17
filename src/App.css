@@ -201,12 +201,17 @@
 
 /* ---------- regions ---------- */
 
+/* Node shapes are matched by class, never by tag. `.region circle` also
+   matched every circle inside an animal — its ears, its eyes, its spots —
+   and handed each one the node's outline and every highlight state, which
+   is why the same animal looked like a different drawing in a crate than
+   it did on a swatch. */
 .region {
   cursor: pointer;
 }
 
 .region polygon,
-.region circle,
+.region .node-dot,
 .region .crate {
   stroke: var(--ink-bg);
   stroke-width: 3;
@@ -222,7 +227,7 @@
 }
 
 .region.dim polygon,
-.region.dim circle,
+.region.dim .node-dot,
 .region.dim .crate,
 .region.dim .slats,
 .region.dim .animal-wrap {
@@ -234,7 +239,7 @@
    brightness() clips the red and green channels, which turned the orange
    into a yellow and made a region look like a colour it was not. */
 .region.nb polygon,
-.region.nb circle,
+.region.nb .node-dot,
 .region.nb .crate {
   stroke: rgba(255, 255, 255, 0.92);
   stroke-width: 3.5;
@@ -242,7 +247,7 @@
 }
 
 .region.sel polygon,
-.region.sel circle,
+.region.sel .node-dot,
 .region.sel .crate {
   stroke: #fff;
   stroke-width: 5;
@@ -264,7 +269,7 @@
    motion rather than a hue, because any hue here is one of the three the
    student is choosing between and would read as an answer. */
 .region.tightest polygon,
-.region.tightest circle,
+.region.tightest .node-dot,
 .region.tightest .crate {
   stroke: #fff;
   stroke-width: 5;
@@ -283,7 +288,7 @@
    crawling one on the most-constrained marker — three dashed outlines
    meaning three different things is not a language anyone can read. */
 .region.spotlight polygon,
-.region.spotlight circle,
+.region.spotlight .node-dot,
 .region.spotlight .crate {
   stroke: #fff;
   stroke-width: 5;
@@ -769,6 +774,17 @@
 }
 
 /* ---------- the conversation ---------- */
+
+/* The method, always on screen, so it never has to be repeated inside a
+   turn and a student who joins halfway still knows what BIT is doing. */
+.helper-rule {
+  margin: 0;
+  font-size: 12.5px;
+  line-height: 1.4;
+  color: var(--faint);
+  border-left: 2px solid rgba(94, 211, 232, 0.45);
+  padding-left: 8px;
+}
 
 /* Three turns at most, so it never needs to scroll and never becomes a
    column of boxes to pick through. */

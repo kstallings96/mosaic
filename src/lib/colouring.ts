@@ -63,12 +63,17 @@ export function forcedRegions(level: ColourLevel, board: Board): number[] {
  *
  * This is the heuristic the whole study is about: when nothing is forced,
  * the least risky place to commit is wherever the fewest choices remain.
+ *
+ * A region with nothing left is excluded. Zero is not the fewest choices,
+ * it is a contradiction — pointing at it and calling it the best place to
+ * play is the opposite of true, and it is the one region a student must
+ * not be sent to. `deadRegions` is how you ask about those.
  */
 export function mostConstrained(level: ColourLevel, board: Board): number[] {
-  const domains = allDomains(level, board);
-  if (domains.size === 0) return [];
-  const min = Math.min(...domains.values());
-  return [...domains].filter(([, n]) => n === min).map(([i]) => i);
+  const live = [...allDomains(level, board)].filter(([, n]) => n > 0);
+  if (live.length === 0) return [];
+  const min = Math.min(...live.map(([, n]) => n));
+  return live.filter(([, n]) => n === min).map(([i]) => i);
 }
 
 /**

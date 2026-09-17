@@ -68,12 +68,15 @@ export default function Helper({
   messages,
   mood,
   activeId,
+  rule,
   onPick,
   children,
 }: {
   messages: ChatMessage[];
   mood: Mood;
   activeId: number | null;
+  /** How it decides where to look, stated once and always on screen. */
+  rule: string;
   onPick: (id: number) => void;
   /** The buttons; they belong under the conversation, not above it. */
   children: ReactNode;
@@ -99,6 +102,11 @@ export default function Helper({
           </span>
         </div>
       </div>
+
+      {/* The method, pinned. It used to be repeated inside every second
+          turn, which made the turns long and still left a student who
+          joined halfway with no idea what it was doing. */}
+      <p className="helper-rule">{rule}</p>
 
       <div className="chat" ref={feed}>
         {shown.length === 0 ? (

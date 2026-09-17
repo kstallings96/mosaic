@@ -53,12 +53,12 @@ export default function Board({
   const PLANK = 3.6;
   const PLANK_IN = 7;
   const ANIMAL = 68;
+  const COUNTER = 52;
 
   // The generated view leaves 34 units of margin, which was the radius of
-  // the dot a node used to be. A crate and the counter on its shoulder
-  // reach further than that, so the last level asks for the difference
-  // back rather than having a corner clipped.
-  const pad = CRATE ? 22 : 0;
+  // the dot a node used to be. A crate reaches further, so the last level
+  // asks for the difference back rather than having a corner clipped.
+  const pad = CRATE ? HALF - 34 + 4 : 0;
 
   const { cascade, cascadeKey } = useCascade(domains);
   const focus = peeking ?? selected;
@@ -190,6 +190,7 @@ export default function Board({
               ) : (
                 <>
                   <circle
+                    className="node-dot"
                     cx={node.x}
                     cy={node.y}
                     r={NODE_R}
@@ -199,21 +200,40 @@ export default function Board({
                 </>
               )}
 
-              {n !== undefined && (
-                <foreignObject
-                  x={CRATE ? node.x + 22 : node.x - 17}
-                  y={CRATE ? node.y - 50 : node.y - 17}
-                  width={34}
-                  height={34}
-                >
-                  <Weight
-                    key={`${i}-${cascadeKey}`}
-                    count={n}
-                    bump={cascade.has(i)}
-                    delay={cascade.get(i) ?? 0}
-                  />
-                </foreignObject>
-              )}
+              {n !== undefined &&
+                (() => {
+                  const w = (
+                    <Weight
+                      key={`${i}-${cascadeKey}`}
+                      count={n}
+                      bump={cascade.has(i)}
+                      delay={cascade.get(i) ?? 0}
+                    />
+                  );
+                  // Only an uncoloured region has a domain, so a crate
+                  // showing a counter is always an empty one — the middle
+                  // of it is free, and it is the one place the counter is
+                  // big enough to read. It used to hang off the shoulder
+                  // at a third of this size.
+                  if (!CRATE) {
+                    return (
+                      <foreignObject x={node.x - 17} y={node.y - 17} width={34} height={34}>
+                        {w}
+                      </foreignObject>
+                    );
+                  }
+                  return (
+                    <g
+                      transform={`translate(${node.x - COUNTER / 2} ${node.y - COUNTER / 2}) scale(${
+                        COUNTER / 34
+                      })`}
+                    >
+                      <foreignObject x={0} y={0} width={34} height={34}>
+                        {w}
+                      </foreignObject>
+                    </g>
+                  );
+                })()}
             </g>
           );
         })}
