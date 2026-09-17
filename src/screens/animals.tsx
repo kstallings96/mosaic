@@ -6,12 +6,13 @@
  * cannot separate the teal from the pink can still separate an elephant
  * from a giraffe, and anyone who can do both has the fact twice.
  *
- * All three have to survive being one flat ink at about forty pixels, which
- * is the size of a crate on the board. That is what picked them: a mane, a
- * pair of ears with a trunk between them, and a pair of horns over a long
- * face are three silhouettes nobody confuses. A flamingo was the obvious
- * partner for the pink, and it did not survive — at this size its neck and
- * beak read as a bent arm.
+ * They are drawn in two inks, dark and pale, and the pale one does most of
+ * the work. A one-ink silhouette is a blob at this size no matter how good
+ * its outline is: what makes a shape read as a face is an eye with a pupil
+ * in it, an ear with a hollow, a muzzle that is a different colour from the
+ * head. So every animal is dark body, pale patch, dark feature drawn back
+ * on top of the pale — three layers, which is how a flat animal icon has
+ * always been built.
  */
 
 export const ANIMALS = ['Elephant', 'Lion', 'Giraffe'] as const;
@@ -20,19 +21,12 @@ export function animalName(index: number): string {
   return ANIMALS[index % ANIMALS.length];
 }
 
-const EYE = 'animal-eye';
-
-/**
- * Interior detail — ear hollows, a muzzle, the edge of a beak.
- *
- * It has to be drawn in a contrasting ink rather than the body ink at low
- * opacity. Same-colour shapes stacked on a solid silhouette are invisible,
- * which is how the lion lost its mane the first time round.
- */
-const CUT = 'animal-cut';
-
-/** For marks that carry the identity on their own, like a giraffe's spots. */
-const DEEP = 'animal-cut deep';
+/** Inner ears, muzzles, spots, tusks, and the whites of eyes. */
+const PALE = 'animal-pale';
+/** A stroked pale line — tusks, mostly. */
+const PALE_LINE = 'animal-pale-line';
+/** A stroked dark line — the lion's mouth, the elephant's trunk. */
+const LINE = 'animal-line';
 
 /** A ring of bumps, for the one animal that is mostly hair. */
 function mane(radius: number, count: number, bump: number) {
@@ -44,53 +38,78 @@ function mane(radius: number, count: number, bump: number) {
   });
 }
 
+/** A pale eye with a dark pupil. The single biggest reason a shape reads as alive. */
+function eyes(x: number, y: number, r: number, pupil: number) {
+  return (
+    <>
+      <circle className={PALE} cx={12 - x} cy={y} r={r} />
+      <circle className={PALE} cx={12 + x} cy={y} r={r} />
+      <circle cx={12 - x + 0.15} cy={y + 0.1} r={pupil} />
+      <circle cx={12 + x - 0.15} cy={y + 0.1} r={pupil} />
+    </>
+  );
+}
+
 function Shape({ i }: { i: number }) {
   switch (i % ANIMALS.length) {
-    case 0: // elephant — big side ears and a trunk
+    case 0: // elephant — ears with hollows, tusks either side of the trunk
       return (
         <>
-          <circle cx="5.6" cy="11" r="5.1" />
-          <circle cx="18.4" cy="11" r="5.1" />
-          <circle className={CUT} cx="5.6" cy="11" r="2.6" />
-          <circle className={CUT} cx="18.4" cy="11" r="2.6" />
-          <rect x="7.8" y="5.5" width="8.4" height="11" rx="4.2" />
+          <circle cx="5" cy="10.2" r="5.5" />
+          <circle cx="19" cy="10.2" r="5.5" />
+          {/* Offset inward and taller than they are wide, so they read as
+              ear hollows. Two pale circles centred in the ears read as a
+              second pair of eyes. */}
+          <ellipse className={PALE} cx="6" cy="10.8" rx="2.3" ry="3" />
+          <ellipse className={PALE} cx="18" cy="10.8" rx="2.3" ry="3" />
+          <rect x="7.3" y="4.4" width="9.4" height="11.8" rx="4.7" />
           <path
-            d="M12 15.6c0 3.4.6 5.4 2 5.4 1 0 1.5-.8 1.5-1.9"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2.2"
-            strokeLinecap="round"
+            className={PALE_LINE}
+            d="M9.7 15.2c-.4 1.6-.4 2.8 0 3.8"
+            strokeWidth="1.5"
           />
-          <circle className={EYE} cx="10" cy="10.4" r="0.95" />
-          <circle className={EYE} cx="14" cy="10.4" r="0.95" />
+          <path
+            className={PALE_LINE}
+            d="M14.3 15.2c.4 1.6.4 2.8 0 3.8"
+            strokeWidth="1.5"
+          />
+          <path className={LINE} d="M12 15v3.6c0 1.9 1 2.9 2.3 2.9" strokeWidth="2.4" />
+          {eyes(2.1, 9.8, 1.5, 0.8)}
         </>
       );
-    case 1: // lion — the mane is bumps, so it survives being one flat colour
+    case 1: // lion — pale face inside the mane, with a nose and a mouth on it
       return (
         <>
-          {mane(8.6, 11, 3.1)}
-          <circle cx="12" cy="12" r="7.6" />
-          <circle className={CUT} cx="12" cy="12.4" r="5.6" />
-          <circle className={EYE} cx="9.9" cy="11.4" r="1" />
-          <circle className={EYE} cx="14.1" cy="11.4" r="1" />
-          <ellipse cx="12" cy="15" rx="2.2" ry="1.5" />
+          {mane(8.5, 12, 3.2)}
+          <circle cx="12" cy="12" r="7.4" />
+          <circle className={PALE} cx="12" cy="12.4" r="5.5" />
+          {eyes(2.2, 11, 1.25, 0.72)}
+          <path d="M12 13.1 13.35 14.35h-2.7Z" />
+          <path
+            className={LINE}
+            d="M12 14.4v1.1M12 15.5c-.55.85-1.75.85-2.25.05M12 15.5c.55.85 1.75.85 2.25.05"
+            strokeWidth="0.85"
+          />
         </>
       );
-    default: // giraffe — stub horns, side ears, spots
+    default: // giraffe — ossicones, side ears, spots, and a pale muzzle
       return (
         <>
-          <rect x="9.2" y="3.2" width="1.5" height="3" rx="0.75" />
-          <circle cx="9.95" cy="2.9" r="1.7" />
-          <rect x="13.3" y="3.2" width="1.5" height="3" rx="0.75" />
-          <circle cx="14.05" cy="2.9" r="1.7" />
-          <ellipse cx="5.9" cy="9.2" rx="2.9" ry="1.7" transform="rotate(-22 5.9 9.2)" />
-          <ellipse cx="18.1" cy="9.2" rx="2.9" ry="1.7" transform="rotate(22 18.1 9.2)" />
-          <ellipse cx="12" cy="13.4" rx="4.7" ry="7.4" />
-          <circle className={DEEP} cx="10" cy="8.8" r="1.9" />
-          <circle className={DEEP} cx="14.2" cy="10.4" r="1.6" />
-          <ellipse className={CUT} cx="12" cy="18.4" rx="3.2" ry="2.4" />
-          <circle className={EYE} cx="9.7" cy="13.2" r="1" />
-          <circle className={EYE} cx="14.3" cy="13.2" r="1" />
+          <rect x="9.1" y="3" width="1.6" height="3.4" rx="0.8" />
+          <circle cx="9.9" cy="2.7" r="1.75" />
+          <rect x="13.3" y="3" width="1.6" height="3.4" rx="0.8" />
+          <circle cx="14.1" cy="2.7" r="1.75" />
+          <ellipse cx="5.7" cy="9" rx="3.1" ry="1.9" transform="rotate(-24 5.7 9)" />
+          <ellipse cx="18.3" cy="9" rx="3.1" ry="1.9" transform="rotate(24 18.3 9)" />
+          <ellipse className={PALE} cx="5.4" cy="9.1" rx="1.5" ry="0.8" transform="rotate(-24 5.4 9.1)" />
+          <ellipse className={PALE} cx="18.6" cy="9.1" rx="1.5" ry="0.8" transform="rotate(24 18.6 9.1)" />
+          <ellipse cx="12" cy="13.2" rx="4.8" ry="7.6" />
+          <circle className={PALE} cx="9.9" cy="8.4" r="1.5" />
+          <circle className={PALE} cx="14.2" cy="9.6" r="1.25" />
+          <ellipse className={PALE} cx="12" cy="18.3" rx="3.4" ry="2.6" />
+          <circle cx="10.8" cy="17.9" r="0.6" />
+          <circle cx="13.2" cy="17.9" r="0.6" />
+          {eyes(2.5, 13.2, 1.5, 0.8)}
         </>
       );
   }

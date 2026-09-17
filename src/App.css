@@ -869,23 +869,28 @@
    Chromebook panel, and a student who cannot tell the teal from the pink. */
 .animal-wrap { pointer-events: none; }
 
-/* The shapes carry no fill of their own, so they inherit this one. Without
-   it they fall back to the SVG default of solid black and vanish against a
-   dark node. `.animal-eye` sets its own fill, so it still wins. */
-.animal { fill: currentColor; }
-.animal-wrap .animal { color: #16121f; }
+/* Two inks, dark and pale. The pale one does most of the work: a one-ink
+   silhouette is a blob at this size no matter how clean its outline. The
+   dark is not pure black, which looks like a hole punched in the crate. */
+.animal {
+  fill: #221b2d;
+  color: #221b2d;
+}
 
-.animal-eye { fill: rgba(255, 255, 255, 0.82); }
+.animal-pale { fill: #fdf6ec; }
 
-/* Interior detail - ear hollows, a muzzle, a giraffe's spots. Drawn in a
-   contrasting ink rather than the body ink at low opacity: same-colour
-   shapes stacked on a solid silhouette are invisible, which is how the
-   lion lost its mane the first time round. */
-.animal-cut { fill: #fff; fill-opacity: 0.4; }
+.animal-line {
+  fill: none;
+  stroke: currentColor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
 
-/* A cut that has to carry the identity on its own rather than just soften
-   an edge. */
-.animal-cut.deep { fill-opacity: 0.66; }
+.animal-pale-line {
+  fill: none;
+  stroke: #fdf6ec;
+  stroke-linecap: round;
+}
 
 /* The counter moved off the crate to its top corner, so it needs its own
    disc to stay legible against whatever is behind it. */

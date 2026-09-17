@@ -165,9 +165,12 @@ export default function Board({
                   {colour !== undefined && (
                     <g
                       className="animal-wrap"
-                      transform={`translate(${node.x - 23} ${node.y - 23})`}
+                      transform={`translate(${node.x - 24} ${node.y - 24})`}
                     >
-                      <AnimalHead index={colour} size={46} />
+                      {/* As large as the planks allow: the giraffe's horns
+                          reach the top of its box and would cross the
+                          upper plank at anything bigger. */}
+                      <AnimalHead index={colour} size={48} />
                     </g>
                   )}
                 </>
