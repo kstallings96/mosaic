@@ -37,6 +37,13 @@ export type EventType =
   | 'walkthrough_stopped'
   | 'assist_unlocked'
   | 'level_solved'
+  // The rule activity. Which rule a student reaches for first, and whether
+  // they go back to one after seeing another, is most of what there is to
+  // learn from a screen they mainly watch.
+  | 'lab_opened'
+  | 'lab_rule_started'
+  | 'lab_rule_finished'
+  | 'lab_speed_changed'
   | 'session_end';
 
 export interface LoggedEvent extends EventRow {

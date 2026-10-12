@@ -4,8 +4,11 @@ import { allDomains } from '../lib/colouring';
 import type { Board as BoardState } from '../lib/colouring';
 import { searchTrace } from '../lib/search';
 import type { Rule, SearchRun } from '../lib/search';
+import { logEvent } from '../lib/logger';
+import { getSessionId } from '../lib/session';
 import Board from './Board';
 import { HelperBot } from './Helper';
+import SearchTree from './SearchTree';
 
 /**
  * Pick BIT's rule.
@@ -41,6 +44,14 @@ const RULES: { id: Rule; name: string; blurb: string }[] = [
   },
 ];
 
+const SPEEDS = [
+  { id: 'slow', name: 'Slow', scale: 2.6 },
+  { id: 'normal', name: 'Normal', scale: 1 },
+  { id: 'fast', name: 'Fast', scale: 0.35 },
+] as const;
+
+type Speed = (typeof SPEEDS)[number]['id'];
+
 /**
  * Slow enough to follow at the start, fast enough to finish.
  *
@@ -48,29 +59,76 @@ const RULES: { id: Rule; name: string; blurb: string }[] = [
  * the bad one is two hundred and sixteen. So the first dozen moves are
  * deliberate and the rest accelerates — which also happens to be what the
  * floundering feels like from the outside.
+ *
+ * Slow mode keeps the whole run deliberate. It is there because the fast
+ * middle of a bad run is where the interesting thing happens — a crate
+ * runs out, everything above it comes back off — and at forty milliseconds
+ * that is a flicker.
  */
-function delayAt(i: number): number {
-  return i < 12 ? 170 : Math.max(40, 170 - (i - 12) * 4);
+function delayAt(i: number, scale: number): number {
+  const base = i < 12 ? 170 : Math.max(40, 170 - (i - 12) * 4);
+  return Math.round(base * scale);
 }
 
 export default function RuleLab() {
   const level = DEMO_BOARD;
+  const [sessionId] = useState(getSessionId);
   const [runs, setRuns] = useState<Partial<Record<Rule, SearchRun>>>({});
   const [active, setActive] = useState<Rule | null>(null);
   const [board, setBoard] = useState<BoardState>({ ...level.given });
   const [at, setAt] = useState(0);
   const [touched, setTouched] = useState<number[]>([]);
+  const [speed, setSpeed] = useState<Speed>('normal');
   const timer = useRef<number | null>(null);
+  // Which rule was reached for first, and in what order the rest were
+  // tried, is most of what there is to learn from a screen a student
+  // mainly watches. Counted here rather than inferred from timestamps.
+  const order = useRef<Rule[]>([]);
+  const scale = useRef(1);
+  // Read from a ref, not from state: a student who changes speed and
+  // immediately starts a run would otherwise be logged at the old speed,
+  // because the state change has not flushed by the time the click runs.
+  const speedNow = useRef<Speed>('normal');
+  const opened = useRef(false);
 
   const run = active ? runs[active] : undefined;
   const done = run !== undefined && at >= run.steps.length;
   const tried = RULES.filter((r) => runs[r.id] && !(active === r.id && !done));
 
-  useEffect(() => () => { if (timer.current !== null) window.clearTimeout(timer.current); }, []);
+  useEffect(() => {
+    // Guarded because StrictMode mounts twice in development, and a
+    // duplicated open would be indistinguishable from a student who
+    // reloaded the page.
+    if (!opened.current) {
+      opened.current = true;
+      logEvent(sessionId, 'lab_opened', { board: level.id });
+    }
+    return () => { if (timer.current !== null) window.clearTimeout(timer.current); };
+  }, [sessionId, level.id]);
+
+  function pickSpeed(next: Speed) {
+    setSpeed(next);
+    speedNow.current = next;
+    scale.current = SPEEDS.find((s) => s.id === next)?.scale ?? 1;
+    logEvent(sessionId, 'lab_speed_changed', { speed: next, during: active ?? null });
+  }
 
   function start(rule: Rule) {
     if (timer.current !== null) window.clearTimeout(timer.current);
     const fresh = searchTrace(level, rule);
+    const again = order.current.includes(rule);
+    order.current.push(rule);
+    logEvent(sessionId, 'lab_rule_started', {
+      rule,
+      // A re-run is a different act from a first try: it means something
+      // did not land, or they want to look again now they have a
+      // comparison. Worth telling apart in the data.
+      rerun: again,
+      nth: order.current.length,
+      speed: speedNow.current,
+      placed: fresh.placed,
+      takenBack: fresh.takenBack,
+    });
     setRuns((r) => ({ ...r, [rule]: fresh }));
     setActive(rule);
     setBoard({ ...level.given });
@@ -90,6 +148,13 @@ export default function RuleLab() {
     if (i >= trace.steps.length) {
       setAt(i);
       setTouched([]);
+      logEvent(sessionId, 'lab_rule_finished', {
+        rule: trace.rule,
+        placed: trace.placed,
+        takenBack: trace.takenBack,
+        deadEnds: trace.deadEnds,
+        solved: trace.solved,
+      });
       return;
     }
     const s = trace.steps[i];
@@ -100,7 +165,7 @@ export default function RuleLab() {
     setBoard(next);
     setAt(i + 1);
     setTouched([s.region]);
-    timer.current = window.setTimeout(() => step(trace, i + 1, next), delayAt(i));
+    timer.current = window.setTimeout(() => step(trace, i + 1, next), delayAt(i, scale.current));
   }
 
   // Counted as it goes, so the scoreboard is the run rather than a summary
@@ -111,6 +176,14 @@ export default function RuleLab() {
   const back = sofar.filter((s) => s.kind === 'undo').length;
 
   const domains = allDomains(level, board);
+
+  // Every tree is drawn on the same horizontal scale, so the bad run looks
+  // as much wider than the good one as it actually is. Scaling each to fit
+  // would make them all the same size, which is the opposite of the point.
+  const widest = Math.max(
+    12,
+    ...Object.values(runs).map((r) => (r ? r.placed : 0)),
+  );
 
   return (
     <div className="lab">
@@ -149,6 +222,19 @@ export default function RuleLab() {
             <span className={back > 0 ? 'bad' : ''}><b>{back}</b> taken back</span>
           </div>
 
+          <div className="lab-speed" role="group" aria-label="Playback speed">
+            {SPEEDS.map((sp) => (
+              <button
+                key={sp.id}
+                type="button"
+                className={`lab-speed-btn${speed === sp.id ? ' on' : ''}`}
+                onClick={() => pickSpeed(sp.id)}
+              >
+                {sp.name}
+              </button>
+            ))}
+          </div>
+
           <div className="lab-rules">
             {RULES.map((r) => {
               const result = runs[r.id];
@@ -160,6 +246,7 @@ export default function RuleLab() {
                   className={`lab-card${active === r.id ? ' on' : ''}`}
                   onClick={() => start(r.id)}
                   disabled={active !== null && !done}
+                  title={finished ? 'Run it again' : undefined}
                 >
                   <span className="lab-card-name">{r.name}</span>
                   <span className="lab-card-blurb">{r.blurb}</span>
@@ -183,6 +270,34 @@ export default function RuleLab() {
           )}
         </aside>
       </div>
+
+      {order.current.length > 0 && (
+        <figure className="lab-tree">
+          <figcaption>
+            Every crate BIT tried. Across is the order it tried them, down is how
+            far into the board it had got. A red dot is a crate that ran out of
+            animals, and everything above it had to come back off. The white line
+            is the part that survived — everything else is what it cost to find it.
+          </figcaption>
+          {RULES.filter((r) => runs[r.id]).map((r) => {
+            const t = runs[r.id];
+            if (!t) return null;
+            const live = active === r.id;
+            return (
+              <div key={r.id} className={`tree-row${live ? ' live' : ''}`}>
+                <span className="tree-label">
+                  {r.name}
+                  <b>{t.takenBack} taken back</b>
+                </span>
+                {/* Every tree on one scale, so the bad run looks as much
+                    wider than the good one as it actually is. Fitting each
+                    to its own box would make them the same size. */}
+                <SearchTree steps={t.steps} upTo={live ? at : t.steps.length} maxT={widest} />
+              </div>
+            );
+          })}
+        </figure>
+      )}
     </div>
   );
 }

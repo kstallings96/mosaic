@@ -1042,3 +1042,93 @@
   border-left: 2px solid rgba(94, 211, 232, 0.45);
   padding-left: 9px;
 }
+
+.lab-speed {
+  display: flex;
+  gap: 4px;
+  padding: 3px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  align-self: flex-start;
+}
+
+.lab-speed-btn {
+  border: none;
+  background: none;
+  color: var(--faint);
+  font: 500 12px/1 var(--display);
+  letter-spacing: 0.04em;
+  padding: 6px 13px;
+  border-radius: 999px;
+  cursor: pointer;
+  transition: background 0.2s, color 0.2s;
+}
+
+.lab-speed-btn:hover { color: var(--ink); }
+.lab-speed-btn.on { background: rgba(94, 211, 232, 0.16); color: var(--c1); }
+
+/* Time across, depth down. The shape is the point: a staircase under the
+   good rule, a thicket under the one a student would have guessed. */
+.lab-tree {
+  margin: 20px 0 0;
+}
+
+.lab-tree figcaption {
+  font-size: 12.5px;
+  line-height: 1.5;
+  color: var(--faint);
+  max-width: 68ch;
+  margin-bottom: 8px;
+}
+
+.tree {
+  width: 100%;
+  height: 132px;
+  display: block;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+}
+
+.tree-edge {
+  stroke: rgba(194, 184, 220, 0.3);
+  stroke-width: 0.12;
+  vector-effect: non-scaling-stroke;
+}
+
+/* The branch still standing at the end — the part of the search that was
+   not wasted. Everything else is what it cost to find it. */
+.tree-edge.kept { stroke: rgba(255, 255, 255, 0.85); stroke-width: 0.3; }
+
+.tree-node { opacity: 0.5; }
+.tree-node.kept { opacity: 1; }
+.tree-node.dead { opacity: 1; }
+
+.tree-row {
+  display: flex;
+  align-items: stretch;
+  gap: 10px;
+  margin-bottom: 7px;
+  opacity: 0.72;
+  transition: opacity 0.25s;
+}
+
+.tree-row.live { opacity: 1; }
+
+.tree-label {
+  flex: 0 0 118px;
+  font: 500 13px/1.3 var(--display);
+  color: var(--dim);
+  align-self: center;
+}
+
+.tree-label b {
+  display: block;
+  font-family: var(--sans);
+  font-size: 11.5px;
+  font-weight: 400;
+  color: var(--faint);
+  font-variant-numeric: tabular-nums;
+}
+
+.tree-row .tree { height: 86px; }
