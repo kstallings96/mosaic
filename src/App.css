@@ -302,19 +302,28 @@
   pointer-events: none;
 }
 
+/* The straps, and the only thing that makes the last board a different
+   KIND of board. On the first two, crates touch and you can see it; on
+   the last they are apart and the strap is the whole statement.
+
+   At three units of #3a3358 they were about two pixels of a colour barely
+   off the background, which made level 3 read as scattered crates rather
+   than connected ones — the same picture as level 2 with gaps in it. They
+   have to be as loud as the thing they are standing in for. */
 .link {
-  stroke: var(--line);
-  stroke-width: 3;
-  transition: stroke 0.18s, opacity 0.18s;
+  stroke: rgba(194, 184, 220, 0.42);
+  stroke-width: 6.5;
+  stroke-linecap: round;
+  transition: stroke 0.18s, stroke-width 0.18s, opacity 0.18s;
 }
 
 .link.lit {
-  stroke: var(--ink);
-  stroke-width: 4;
+  stroke: rgba(255, 255, 255, 0.95);
+  stroke-width: 8.5;
 }
 
 .link.dim {
-  opacity: 0.22;
+  opacity: 0.16;
 }
 
 /* ---------- weight ---------- */

@@ -260,9 +260,9 @@ console.log('l3: ' + g.n + ' crates, ' + g.edges + ' touching pairs, ' +
   drawing.c + ' line crossings (best of 160 layouts), propagation places ' +
   g.pr.placed + ' in ' + g.pr.waves + ' waves, stalls with ' + g.pr.left);
 
-const L3 = { id: 'l3', title: 'Level 3 · The Zoo',
+const L3 = { id: 'l3', title: 'Level 3 · On the Truck',
   rule: 'Crates that touch can\u2019t hold the same animal.',
-  note: 'Eleven crates, three animals, and nothing filled in for you.',
+  note: 'The crates are loaded and strapped. A strap means those two ride touching — same rule, nothing filled in for you.',
   words: { thing: 'crate', slot: 'animal' },
   icons: 'animals',
   kind: 'graph', k: 3, nodes: pos, adj: g.adj, given: g.given, solution: g.sol,

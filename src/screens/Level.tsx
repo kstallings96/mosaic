@@ -69,10 +69,10 @@ const HOW_TO: Record<string, { story: string; steps: string[] }> = {
     ],
   },
   l3: {
-    story: 'Same zoo, but the crates are spread out now. A line between two crates means those two ride touching each other.',
+    story: 'The crates are on the truck now, strapped in pairs. You can’t see them touching any more — the strap is what tells you they do.',
     steps: [
       'Same three animals: elephant, lion, giraffe.',
-      'Two crates with a line between them are touching. They can’t hold the same animal — those two would fight the whole way.',
+      'Two crates joined by a strap are touching. They can’t hold the same animal — those two would fight the whole way.',
       'Nothing is filled in for you here. Start with the crate that has the fewest animals left.',
     ],
   },
