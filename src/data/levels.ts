@@ -39,13 +39,13 @@ export const LEVELS: ColourLevel[] = [
   {
     "id": "l1",
     "title": "Level 1 · One Rule",
-    "rule": "Two regions that touch can’t be the same color.",
-    "note": "Every move here decides itself. Find a region with one color left, fill it in, and watch what it does to the ones around it.",
+    "rule": "Crates that touch can’t hold the same animal.",
+    "note": "Every move here decides itself. Find a crate with one animal left, fill it in, and watch what it does to the crates around it.",
     "words": {
-      "thing": "region",
-      "slot": "color"
+      "thing": "crate",
+      "slot": "animal"
     },
-    "icons": "none",
+    "icons": "animals",
     "kind": "hex",
     "k": 3,
     "nodes": [
@@ -154,13 +154,13 @@ export const LEVELS: ColourLevel[] = [
   {
     "id": "l2",
     "title": "Level 2 · Your Call",
-    "rule": "Two regions that touch can’t be the same color.",
-    "note": "The free moves run out partway through. When they do, go for the region with the fewest colors left.",
+    "rule": "Crates that touch can’t hold the same animal.",
+    "note": "The free moves run out partway through. When they do, go for the crate with the fewest animals left.",
     "words": {
-      "thing": "region",
-      "slot": "color"
+      "thing": "crate",
+      "slot": "animal"
     },
-    "icons": "none",
+    "icons": "animals",
     "kind": "hex",
     "k": 3,
     "nodes": [

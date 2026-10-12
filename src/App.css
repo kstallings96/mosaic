@@ -1141,3 +1141,12 @@
   line-height: 1.5;
   color: var(--ok);
 }
+
+.timed-out {
+  margin: 0;
+  font-size: 13.5px;
+  line-height: 1.55;
+  color: var(--dim);
+  border-left: 2px solid var(--c2);
+  padding-left: 9px;
+}

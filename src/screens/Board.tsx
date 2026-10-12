@@ -55,10 +55,20 @@ export default function Board({
   const ANIMAL = 68;
   const COUNTER = 52;
 
+  // The early levels are the same zoo, so their cells hold animals too —
+  // but a hex cell is 73 across the flats where a crate is 88, and it
+  // narrows to a point top and bottom, so the planks and the animal have
+  // to be sized to the narrow part rather than the wide one.
+  const HEX_ANIMAL = 50;
+  const HEX_PLANK_Y = 24;
+  const HEX_PLANK_W = 42;
+
   // The generated view leaves 34 units of margin, which was the radius of
   // the dot a node used to be. A crate reaches further, so the last level
   // asks for the difference back rather than having a corner clipped.
-  const pad = CRATE ? HALF - 34 + 4 : 0;
+  // Only the graph level needs it. The hex view is already framed with a
+  // full cell of margin, and a crate is wider than the dot it replaced.
+  const pad = CRATE && level.kind === 'graph' ? HALF - 34 + 4 : 0;
 
   const { cascade, cascadeKey } = useCascade(domains);
   const focus = peeking ?? selected;
@@ -136,7 +146,33 @@ export default function Board({
                     points={node.poly}
                     fill={colour === undefined ? 'var(--empty)' : COLOURS[colour]}
                   />
+                  {CRATE && (
+                    <g className={`slats${colour === undefined ? ' on-empty' : ' on-filled'}`}>
+                      <rect
+                        x={node.x - HEX_PLANK_W / 2}
+                        y={node.y - HEX_PLANK_Y}
+                        width={HEX_PLANK_W}
+                        height={PLANK}
+                        rx={PLANK / 2}
+                      />
+                      <rect
+                        x={node.x - HEX_PLANK_W / 2}
+                        y={node.y + HEX_PLANK_Y - PLANK}
+                        width={HEX_PLANK_W}
+                        height={PLANK}
+                        rx={PLANK / 2}
+                      />
+                    </g>
+                  )}
                   {locked && <polygon className="pin" points={node.poly} fill="none" />}
+                  {CRATE && colour !== undefined && (
+                    <g
+                      className="animal-wrap"
+                      transform={`translate(${node.x - HEX_ANIMAL / 2} ${node.y - HEX_ANIMAL / 2})`}
+                    >
+                      <AnimalHead index={colour} size={HEX_ANIMAL} />
+                    </g>
+                  )}
                 </>
               ) : CRATE ? (
                 <>
@@ -222,10 +258,13 @@ export default function Board({
                       </foreignObject>
                     );
                   }
+                  // A hex cell is narrower than a crate, so the counter is
+                  // sized to whichever cell it is actually sitting in.
+                  const size = level.kind === 'hex' ? HEX_ANIMAL : COUNTER;
                   return (
                     <g
-                      transform={`translate(${node.x - COUNTER / 2} ${node.y - COUNTER / 2}) scale(${
-                        COUNTER / 34
+                      transform={`translate(${node.x - size / 2} ${node.y - size / 2}) scale(${
+                        size / 34
                       })`}
                     >
                       <foreignObject x={0} y={0} width={34} height={34}>

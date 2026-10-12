@@ -68,14 +68,14 @@ function frame(pts, pad) {
 }
 
 function hexLevel(R, dropArr, given, id, title, rule, note) {
-  const words = { thing: 'region', slot: 'color' };
-  const icons = 'none';
+  const words = { thing: 'crate', slot: 'animal' };
+  const icons = 'animals';
   const { cells, adj } = hex(R, new Set(dropArr));
   const { f, sols } = count(adj, 3, given, 3);
   if (f !== 1) throw new Error(id + ': expected a unique colouring, got ' + f);
   const pr = propagate(adj, 3, given);
   const nodes = cells.map(c => ({ ...centre(c), poly: poly(c) }));
-  console.log(id + ': ' + adj.length + ' regions, unique=' + (f === 1) +
+  console.log(id + ': ' + adj.length + ' crates, unique=' + (f === 1) +
     ', propagation places ' + pr.placed + ' in ' + pr.waves + ' waves, stalls with ' + pr.left);
   return { id, title, rule, note, words, icons, kind: 'hex', k: 3, nodes, adj, given, solution: sols[0],
            view: frame(nodes, HEX),
@@ -244,12 +244,12 @@ function widen(pos, adj, target = 1.6) {
 }
 
 const L1 = hexLevel(1, [], { 3: 2, 0: 0 }, 'l1', 'Level 1 · One Rule',
-  'Two regions that touch can\u2019t be the same color.',
-  'Every move here decides itself. Find a region with one color left, fill it in, and watch what it does to the ones around it.');
+  'Crates that touch can\u2019t hold the same animal.',
+  'Every move here decides itself. Find a crate with one animal left, fill it in, and watch what it does to the crates around it.');
 
 const L2 = hexLevel(2, [2, 13, 9], { 6: 2, 13: 0, 14: 1 }, 'l2', 'Level 2 · Your Call',
-  'Two regions that touch can\u2019t be the same color.',
-  'The free moves run out partway through. When they do, go for the region with the fewest colors left.');
+  'Crates that touch can\u2019t hold the same animal.',
+  'The free moves run out partway through. When they do, go for the crate with the fewest animals left.');
 
 const g = findGraph(3);
 if (!g) throw new Error('no level 3 graph found');

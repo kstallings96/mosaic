@@ -37,6 +37,9 @@ export type EventType =
   | 'walkthrough_stopped'
   | 'assist_unlocked'
   | 'level_solved'
+  // An unassisted level that ran out of time. Its moves are the student's
+  // but the board is unfinished, so analysis has to be able to set them aside.
+  | 'level_timed_out'
   // The rule activity. Which rule a student reaches for first, and whether
   // they go back to one after seeing another, is most of what there is to
   // learn from a screen they mainly watch.

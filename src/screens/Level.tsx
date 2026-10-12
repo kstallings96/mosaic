@@ -12,6 +12,20 @@ import AnimalHead, { animalName } from './animals';
 import Helper from './Helper';
 import type { ChatMessage, Mood } from './Helper';
 
+/**
+ * Screens the helper never appears on.
+ *
+ * Level 3 is where the student plays a board alone after being shown how
+ * the solver picks, so it is the measure. A helper that surfaces at sixty
+ * seconds and offers "go where the fewest animals fit" is handing over the
+ * answer in the middle of the test.
+ *
+ * This is a property of the session design rather than of the level, which
+ * is why it lives here and not in levels.ts: the same board would want the
+ * helper if it were being taught on rather than measured with.
+ */
+const UNASSISTED: string[] = ['level3'];
+
 /** How long the student gets before the helper appears. */
 const FREE_PLAY_SECONDS = 60;
 /** A ceiling so every student finishes and the session stays near ten minutes. */
@@ -20,27 +34,27 @@ const WALK_STEP_MS = 1100;
 
 const HOW_TO: Record<string, { story: string; steps: string[] }> = {
   l1: {
-    story: 'Color the whole map. There is only one rule, and it is at the top of the screen.',
+    story: 'Loading day at the zoo. Every crate takes one animal, and these crates are stacked touching each other.',
     steps: [
-      'Tap a region, then tap a color.',
-      'If a region it touches already has a color, that color gets crossed out. You can’t pick it.',
-      'A green 1 means only one color still fits. Those are free — take them.',
-      'Press and hold any region to see which ones it touches.',
+      'Tap a crate, then tap an animal.',
+      'If a crate it touches already has that animal, the animal gets crossed out. You can’t pick it.',
+      'A green 1 means only one animal still fits. Those are free — take them.',
+      'Press and hold any crate to see which ones it touches.',
     ],
   },
   l2: {
-    story: 'A bigger map. This one will not fill itself in all the way.',
+    story: 'A bigger stack. This one will not fill itself in all the way.',
     steps: [
       'Same rule, same buttons.',
-      'Grab the free ones first — the regions showing a green 1.',
-      'They run out partway. Then you pick, and the smart pick is the region with the fewest colors left.',
-      'A red 0 means a region has nothing left. Hit Undo and try something else.',
+      'Grab the free ones first — the crates showing a green 1.',
+      'They run out partway. Then you pick, and the smart pick is the crate with the fewest animals left.',
+      'A red 0 means a crate has nothing that fits. Hit Undo and try something else.',
     ],
   },
   l3: {
-    story: 'Loading day at the zoo. Every crate takes one animal, and a line between two crates means those two ride touching each other.',
+    story: 'Same zoo, but the crates are spread out now. A line between two crates means those two ride touching each other.',
     steps: [
-      'Three animals: elephant, lion, giraffe. Each one is a color.',
+      'Same three animals: elephant, lion, giraffe.',
       'Two crates with a line between them are touching. They can’t hold the same animal — those two would fight the whole way.',
       'Nothing is filled in for you here. Start with the crate that has the fewest animals left.',
     ],
@@ -125,8 +139,10 @@ export default function Level({
   const board = useColourBoard(level, sessionId, onSolved);
   const [showHowTo, setShowHowTo] = useState(true);
   const [peeking, setPeeking] = useState<number | null>(null);
+  const unassisted = UNASSISTED.includes(screen);
   const [secondsLeft, setSecondsLeft] = useState(FREE_PLAY_SECONDS);
   const [assistUnlocked, setAssistUnlocked] = useState(false);
+  const [timedOut, setTimedOut] = useState(false);
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [activeMsg, setActiveMsg] = useState<number | null>(null);
   const [mood, setMood] = useState<Mood>('idle');
@@ -154,21 +170,39 @@ export default function Level({
   }, [board.solved, showHowTo]);
 
   useEffect(() => {
-    if (secondsLeft === 0 && !unlockLogged.current) {
-      unlockLogged.current = true;
-      setAssistUnlocked(true);
-      logEvent(sessionId, 'assist_unlocked', { level: level.id });
-    }
-  }, [secondsLeft, sessionId, level.id]);
+    if (unassisted || secondsLeft !== 0 || unlockLogged.current) return;
+    unlockLogged.current = true;
+    setAssistUnlocked(true);
+    logEvent(sessionId, 'assist_unlocked', { level: level.id });
+  }, [unassisted, secondsLeft, sessionId, level.id]);
 
-  // Hard cap: nobody leaves with an unsolved board.
+  /**
+   * The cap.
+   *
+   * On a taught level it finishes the board, because nobody should leave
+   * with an unsolved one and the four minutes exist to guarantee that.
+   *
+   * On an unassisted level it must NOT: the helper playing the board is
+   * still the helper, and writing the solver's moves into the trace would
+   * score a student who ran out of time as though they had played the
+   * whole thing perfectly. It stops instead and says so, and the timeout
+   * is logged so those moves can be set aside rather than counted.
+   */
   useEffect(() => {
     const t = window.setTimeout(() => {
-      if (!board.solved && !capped.current) {
-        capped.current = true;
-        setAssistUnlocked(true);
-        startWalkthrough(true);
+      if (board.solved || capped.current) return;
+      capped.current = true;
+      if (unassisted) {
+        logEvent(sessionId, 'level_timed_out', {
+          level: level.id,
+          placed: Object.keys(board.boardRef.current).length,
+          total: level.nodes.length,
+        });
+        setTimedOut(true);
+        return;
       }
+      setAssistUnlocked(true);
+      startWalkthrough(true);
     }, HARD_CAP_MS);
     return () => window.clearTimeout(t);
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -398,7 +432,11 @@ export default function Level({
       <header className="level-head">
         <h1 className="rule">{level.rule}</h1>
         <div className="level-meta">
+          {/* No clock on an unassisted level. Counting down to a helper
+              that never arrives promises something, and "Helper ready"
+              on a screen with no helper is worse than no clock at all. */}
           {!board.solved &&
+            !unassisted &&
             (secondsLeft > 0 ? (
               <span className="clock">Your turn: {secondsLeft}s</span>
             ) : (
@@ -477,6 +515,13 @@ export default function Level({
               Reset
             </button>
           </div>
+
+          {timedOut && (
+            <p className="timed-out">
+              Time&rsquo;s up on this one — that&rsquo;s fine, it&rsquo;s a hard board. Tell the
+              researcher you&rsquo;re done.
+            </p>
+          )}
 
           {assistUnlocked && !board.solved && (
             <Helper
