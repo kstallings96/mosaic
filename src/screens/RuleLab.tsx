@@ -6,6 +6,7 @@ import { searchTrace } from '../lib/search';
 import type { Rule, SearchRun } from '../lib/search';
 import { flush, logEvent } from '../lib/logger';
 import { getSessionId, getSessionStartedAt } from '../lib/session';
+import { useScreenTiming } from '../lib/useScreenTiming';
 import Board from './Board';
 import { HelperBot } from './Helper';
 import SearchTree from './SearchTree';
@@ -73,6 +74,9 @@ function delayAt(i: number, scale: number): number {
 export default function RuleLab({ onDone }: { onDone?: () => void }) {
   const level = DEMO_BOARD;
   const [sessionId] = useState(getSessionId);
+  // Logged the same way as the levels, so time on task across the session
+  // comes from one place rather than being reconstructed for this screen.
+  useScreenTiming(sessionId, 'lab');
   const [runs, setRuns] = useState<Partial<Record<Rule, SearchRun>>>({});
   const [active, setActive] = useState<Rule | null>(null);
   const [board, setBoard] = useState<BoardState>({ ...level.given });

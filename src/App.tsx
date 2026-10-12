@@ -12,7 +12,8 @@ import './App.css';
 
 const NEXT: Record<Phase, Phase> = {
   login: 'level1',
-  level1: 'level2',
+  level1: 'lab',
+  lab: 'level2',
   level2: 'level3',
   level3: 'end',
   end: 'end',
@@ -72,6 +73,7 @@ export default function App() {
           onSolved={advance}
         />
       )}
+      {phase === 'lab' && <RuleLab onDone={advance} />}
       {phase === 'end' && <End sessionId={sessionId} />}
     </div>
   );

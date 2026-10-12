@@ -28,8 +28,25 @@ const UNASSISTED: string[] = ['level3'];
 
 /** How long the student gets before the helper appears. */
 const FREE_PLAY_SECONDS = 60;
-/** A ceiling so every student finishes and the session stays near ten minutes. */
-const HARD_CAP_MS = 4 * 60 * 1000;
+/**
+ * A ceiling per screen, so one stuck student cannot eat the period.
+ *
+ * It used to be four minutes everywhere, which was right when three
+ * levels were the whole session. With the lab between them, three
+ * four-minute caps plus a self-paced activity runs past twenty minutes on
+ * a bad day — and the budget is fifteen.
+ *
+ * Level 1 is the shortest because it fills itself in: anyone still on it
+ * after two minutes is stuck on the interface, not the puzzle, and more
+ * time will not help. Level 3 gets the most because it is the one being
+ * measured, and a student cut off mid-reasoning is a row thrown away.
+ */
+const HARD_CAP_MS: Record<string, number> = {
+  level1: 2 * 60 * 1000,
+  level2: 3 * 60 * 1000,
+  level3: 3.5 * 60 * 1000,
+};
+const DEFAULT_CAP_MS = 3 * 60 * 1000;
 const WALK_STEP_MS = 1100;
 
 const HOW_TO: Record<string, { story: string; steps: string[] }> = {
@@ -203,7 +220,7 @@ export default function Level({
       }
       setAssistUnlocked(true);
       startWalkthrough(true);
-    }, HARD_CAP_MS);
+    }, HARD_CAP_MS[screen] ?? DEFAULT_CAP_MS);
     return () => window.clearTimeout(t);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);

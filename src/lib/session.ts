@@ -5,7 +5,9 @@ const PHASE_KEY = 'mosaic_phase';
 const LOGIN_INFO_KEY = 'mosaic_login_info';
 const STARTED_AT_KEY = 'mosaic_started_at';
 
-const VALID_PHASES: Phase[] = ['login', 'level1', 'level2', 'level3', 'end'];
+import { PHASE_ORDER } from '../types';
+
+const VALID_PHASES: Phase[] = PHASE_ORDER;
 
 /**
  * The session id persists across reloads so a refresh resumes rather than
