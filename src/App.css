@@ -1132,3 +1132,12 @@
 }
 
 .tree-row .tree { height: 86px; }
+
+.lab-done { margin-top: 2px; }
+
+.lab-finished {
+  margin: 2px 0 0;
+  font-size: 14px;
+  line-height: 1.5;
+  color: var(--ok);
+}

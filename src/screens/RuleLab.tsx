@@ -4,8 +4,8 @@ import { allDomains } from '../lib/colouring';
 import type { Board as BoardState } from '../lib/colouring';
 import { searchTrace } from '../lib/search';
 import type { Rule, SearchRun } from '../lib/search';
-import { logEvent } from '../lib/logger';
-import { getSessionId } from '../lib/session';
+import { flush, logEvent } from '../lib/logger';
+import { getSessionId, getSessionStartedAt } from '../lib/session';
 import Board from './Board';
 import { HelperBot } from './Helper';
 import SearchTree from './SearchTree';
@@ -70,7 +70,7 @@ function delayAt(i: number, scale: number): number {
   return Math.round(base * scale);
 }
 
-export default function RuleLab() {
+export default function RuleLab({ onDone }: { onDone?: () => void }) {
   const level = DEMO_BOARD;
   const [sessionId] = useState(getSessionId);
   const [runs, setRuns] = useState<Partial<Record<Rule, SearchRun>>>({});
@@ -79,6 +79,7 @@ export default function RuleLab() {
   const [at, setAt] = useState(0);
   const [touched, setTouched] = useState<number[]>([]);
   const [speed, setSpeed] = useState<Speed>('normal');
+  const [finished, setFinished] = useState(false);
   const timer = useRef<number | null>(null);
   // Which rule was reached for first, and in what order the rest were
   // tried, is most of what there is to learn from a screen a student
@@ -111,6 +112,40 @@ export default function RuleLab() {
     speedNow.current = next;
     scale.current = SPEEDS.find((s) => s.id === next)?.scale ?? 1;
     logEvent(sessionId, 'lab_speed_changed', { speed: next, during: active ?? null });
+  }
+
+  /**
+   * The student says they are done.
+   *
+   * It is a button rather than a rule-count because finishing is their
+   * call: one student will watch all three and stop, another will run the
+   * bad one twice and want to see the good one again. Both are finished
+   * when they say so, and the difference between them is in `order`.
+   */
+  function finish() {
+    if (timer.current !== null) window.clearTimeout(timer.current);
+    const summary = {
+      rulesRun: [...new Set(order.current)],
+      order: order.current,
+      runs: order.current.length,
+      takenBack: Object.fromEntries(
+        Object.entries(runs).map(([k, v]) => [k, v ? v.takenBack : null]),
+      ),
+    };
+    logEvent(sessionId, 'lab_finished', summary);
+    if (onDone) {
+      onDone();
+      return;
+    }
+    // Standalone: nothing follows, so the session ends here rather than
+    // waiting for a pagehide that a Chromebook lid might never send.
+    const startedAt = getSessionStartedAt();
+    logEvent(sessionId, 'session_end', {
+      totalMs: startedAt ? Date.now() - startedAt : null,
+      completed: true,
+    });
+    setFinished(true);
+    void flush();
   }
 
   function start(rule: Rule) {
@@ -259,6 +294,18 @@ export default function RuleLab() {
               );
             })}
           </div>
+
+          {tried.length >= 1 && !finished && (
+            <button type="button" className="primary-button lab-done" onClick={finish}>
+              I&rsquo;m done
+            </button>
+          )}
+
+          {finished && (
+            <p className="lab-finished">
+              Thanks — that&rsquo;s everything. You can close the tab.
+            </p>
+          )}
 
           {tried.length >= 2 && (
             <p className="lab-verdict">

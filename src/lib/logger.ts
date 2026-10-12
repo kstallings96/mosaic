@@ -44,6 +44,7 @@ export type EventType =
   | 'lab_rule_started'
   | 'lab_rule_finished'
   | 'lab_speed_changed'
+  | 'lab_finished'
   | 'session_end';
 
 export interface LoggedEvent extends EventRow {
