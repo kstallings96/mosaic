@@ -5,6 +5,7 @@ import { flush, startEventQueue, stopEventQueue } from './lib/logger';
 import type { Phase } from './types';
 import { levelIndexFor } from './types';
 import Login from './screens/Login';
+import RuleLab from './screens/RuleLab';
 import Level from './screens/Level';
 import End from './screens/End';
 import './App.css';
@@ -18,6 +19,11 @@ const NEXT: Record<Phase, Phase> = {
 };
 
 export default function App() {
+  // A hatch, not a route. The rule activity is still being designed and has
+  // no place in the session flow yet; this is how it gets looked at without
+  // wiring it into a sequence it may not end up in.
+  const lab = typeof window !== 'undefined' && window.location.search.includes('lab');
+
   const [sessionId] = useState(getSessionId);
   const [phase, setPhaseState] = useState<Phase>(() => getPersistedPhase() ?? 'login');
 
@@ -36,6 +42,8 @@ export default function App() {
   }
 
   const levelIndex = levelIndexFor(phase);
+
+  if (lab) return <div className="app"><RuleLab /></div>;
 
   return (
     <div className="app">

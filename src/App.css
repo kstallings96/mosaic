@@ -934,3 +934,111 @@
   border-radius: 50%;
   box-shadow: 0 0 0 2px var(--ink-bg);
 }
+
+/* ---------- the rule lab (pick BIT's rule) ---------- */
+
+.lab {
+  padding: 18px clamp(14px, 3vw, 28px) 28px;
+}
+
+.lab-rule {
+  font-size: clamp(18px, 2.4vw, 25px);
+  margin: 0 0 14px;
+}
+
+.lab-main {
+  display: flex;
+  gap: 22px;
+  align-items: flex-start;
+}
+
+.lab-main .board-wrap { flex: 1 1 auto; min-width: 0; }
+
+.lab-side {
+  flex: 0 0 300px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+@media (max-width: 1023px) {
+  .lab-main { flex-direction: column; }
+  .lab-side { flex: 1 1 auto; width: 100%; }
+}
+
+.lab-bot {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+}
+
+.lab-bot p {
+  margin: 0;
+  font-size: 13.5px;
+  line-height: 1.5;
+  color: var(--dim);
+}
+
+/* The count climbs while you watch, so it is the run rather than a report
+   of the run. A number that only shows up at the end is a result. */
+.lab-score {
+  display: flex;
+  gap: 18px;
+  font-family: var(--display);
+  font-size: 13px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--faint);
+}
+
+.lab-score b {
+  font-size: 22px;
+  display: block;
+  color: var(--ink);
+  font-variant-numeric: tabular-nums;
+}
+
+.lab-score .bad b { color: var(--bad); }
+
+.lab-rules {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.lab-card {
+  text-align: left;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 10px 12px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--ink);
+  cursor: pointer;
+  transition: border-color 0.2s, background 0.2s, opacity 0.2s;
+}
+
+.lab-card:not(:disabled):hover { background: rgba(255, 255, 255, 0.09); }
+.lab-card:disabled { cursor: default; opacity: 0.5; }
+.lab-card.on { border-color: var(--c1); background: rgba(94, 211, 232, 0.12); opacity: 1; }
+
+.lab-card-name { font-family: var(--display); font-weight: 500; font-size: 15px; }
+.lab-card-blurb { font-size: 12.5px; color: var(--dim); line-height: 1.4; }
+
+.lab-card-score {
+  font-size: 12px;
+  color: var(--faint);
+  font-variant-numeric: tabular-nums;
+  margin-top: 3px;
+}
+
+.lab-verdict {
+  margin: 0;
+  font-size: 13.5px;
+  line-height: 1.55;
+  color: var(--dim);
+  border-left: 2px solid rgba(94, 211, 232, 0.45);
+  padding-left: 9px;
+}

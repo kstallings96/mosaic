@@ -21,8 +21,16 @@ import { domain } from './colouring';
  * on it, and the three study levels were verified against it.
  */
 
-/** Which crate to work on next. The rule a person chose. */
-export type Rule = 'fewest' | 'inOrder' | 'most';
+/**
+ * Which crate to work on next. The rule a person chose.
+ *
+ * `leftToRight` exists instead of plain index order because a student has
+ * to be able to check the rule against the picture. Index order is real to
+ * the program and invisible on screen — a crate's number says nothing about
+ * where it sits — so "it went in order" would be a claim they can only take
+ * on faith. Left to right they can watch.
+ */
+export type Rule = 'fewest' | 'leftToRight' | 'most';
 
 export interface SearchStep {
   kind: 'place' | 'dead' | 'undo';
@@ -60,7 +68,9 @@ function openRegions(level: ColourLevel, board: Board): number[] {
 }
 
 function choose(level: ColourLevel, board: Board, open: number[], rule: Rule): number {
-  if (rule === 'inOrder') return open[0];
+  if (rule === 'leftToRight') {
+    return open.reduce((best, i) => (level.nodes[i].x < level.nodes[best].x ? i : best));
+  }
   const better = rule === 'fewest'
     ? (a: number, b: number) => b < a
     : (a: number, b: number) => b > a;
