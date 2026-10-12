@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { LEVELS } from './data/levels';
-import { getPersistedPhase, getSessionId, persistPhase } from './lib/session';
+import { getLoginInfo, getPersistedPhase, getSessionId, persistPhase } from './lib/session';
 import { flush, startEventQueue, stopEventQueue } from './lib/logger';
 import type { Phase } from './types';
 import { levelIndexFor } from './types';
@@ -25,6 +25,7 @@ export default function App() {
   const lab = typeof window !== 'undefined' && window.location.search.includes('lab');
 
   const [sessionId] = useState(getSessionId);
+  const [signedIn, setSignedIn] = useState(() => getLoginInfo() !== null);
   const [phase, setPhaseState] = useState<Phase>(() => getPersistedPhase() ?? 'login');
 
   useEffect(() => {
@@ -43,7 +44,21 @@ export default function App() {
 
   const levelIndex = levelIndexFor(phase);
 
-  if (lab) return <div className="app"><RuleLab /></div>;
+  if (lab) {
+    // The lab logs like any other screen, and events.session_id is a foreign
+    // key to sessions(id) — so a lab that skipped sign-in produced events
+    // referencing a session row that was never written, every insert was
+    // rejected, and the queue just grew. It goes through the same Login.
+    return (
+      <div className="app">
+        {signedIn ? (
+          <RuleLab />
+        ) : (
+          <Login sessionId={sessionId} onComplete={() => setSignedIn(true)} />
+        )}
+      </div>
+    );
+  }
 
   return (
     <div className="app">

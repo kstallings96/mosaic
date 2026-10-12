@@ -1,17 +1,14 @@
 import { useState } from 'react';
 import { logEvent } from '../lib/logger';
-import { markSessionStarted, saveLoginInfo } from '../lib/session';
+import { GRADE, markSessionStarted, saveLoginInfo } from '../lib/session';
 import { insertSession } from '../lib/supabase';
 import { useScreenTiming } from '../lib/useScreenTiming';
-
-const GRADES = ['5', '6', '7', '8', '9'];
 
 export default function Login({ sessionId, onComplete }: { sessionId: string; onComplete: () => void }) {
   useScreenTiming(sessionId, 'login');
 
   const [firstName, setFirstName] = useState('');
   const [lastInitial, setLastInitial] = useState('');
-  const [grade, setGrade] = useState('');
   const [errors, setErrors] = useState<Record<string, string>>({});
 
   function handleBegin(e: React.FormEvent) {
@@ -19,11 +16,10 @@ export default function Login({ sessionId, onComplete }: { sessionId: string; on
     const next: Record<string, string> = {};
     if (!firstName.trim()) next.firstName = 'Please enter your first name.';
     if (!lastInitial.trim()) next.lastInitial = 'Please enter your last initial.';
-    if (!grade) next.grade = 'Please choose your grade.';
     setErrors(next);
     if (Object.keys(next).length > 0) return;
 
-    saveLoginInfo({ firstName: firstName.trim(), lastInitial: lastInitial.trim(), grade });
+    saveLoginInfo({ firstName: firstName.trim(), lastInitial: lastInitial.trim(), grade: GRADE });
     markSessionStarted();
 
     // Deliberately not awaited: the student moves on immediately and a
@@ -32,7 +28,7 @@ export default function Login({ sessionId, onComplete }: { sessionId: string; on
       id: sessionId,
       first_name: firstName.trim(),
       last_initial: lastInitial.trim().slice(0, 1).toUpperCase(),
-      grade,
+      grade: GRADE,
       user_agent: navigator.userAgent,
       screen_w: window.screen.width,
       screen_h: window.screen.height,
@@ -76,19 +72,6 @@ export default function Login({ sessionId, onComplete }: { sessionId: string; on
               onChange={(e) => setLastInitial(e.target.value)}
             />
             {errors.lastInitial && <p className="field-error">{errors.lastInitial}</p>}
-          </div>
-
-          <div className="field">
-            <label htmlFor="grade">Grade</label>
-            <select id="grade" value={grade} onChange={(e) => setGrade(e.target.value)}>
-              <option value="">Choose one</option>
-              {GRADES.map((g) => (
-                <option key={g} value={g}>
-                  {g}
-                </option>
-              ))}
-            </select>
-            {errors.grade && <p className="field-error">{errors.grade}</p>}
           </div>
 
           <button type="submit" className="primary-button">

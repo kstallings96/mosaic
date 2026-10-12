@@ -30,6 +30,17 @@ export function persistPhase(phase: Phase): void {
   localStorage.setItem(PHASE_KEY, phase);
 }
 
+/**
+ * The grade these participants are in.
+ *
+ * `sessions.grade` is NOT NULL, and a single-grade study does not need to
+ * ask fifty 8th graders what grade they are in — it is one more thing to
+ * mistype and one more field between a student and the puzzle. It stays a
+ * column rather than becoming a constant in the schema because a later
+ * cohort might span grades; the day one does, this becomes a field again.
+ */
+export const GRADE = '8';
+
 export interface LoginInfo {
   firstName: string;
   lastInitial: string;
